@@ -14,3 +14,22 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+## 프로젝트 구조 예시 
+
+lib/
+ ├── main.dart               # 앱 진입점
+ ├── models/                 # 데이터 모델 클래스
+ ├── views/                  # 화면 관련 위젯(스크린) 모음
+ ├── widgets/                # 재사용 가능한 위젯
+ ├── controllers/            # MVC나 컨트롤러 로직 포함 (상태 관리 포함)
+ ├── services/               # API 호출, 데이터 처리 서비스
+ ├── repositories/           # 데이터 소스 관리 (API, DB, 캐시)
+ ├── utils/                  # 공통 유틸리티 함수
+ ├── themes/                 # 앱 테마 (색상, 폰트 등)
+ └── providers/              # 상태 관리 관련 코드 (Provider 등)
+assets/                      # 이미지, 폰트, 리소스 포함
+
+## 사용환경
+
+Flutter 3.35.6
