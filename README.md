@@ -5,9 +5,12 @@ A new Flutter project.
 ## Getting Started
 
 사용 순서
-1.Flutter SDK 설치
+1.Flutter SDK 설치 (3.35.6)
+
 2.프로젝트 git Clone
+
 3.의존성 설치 (flutter pub get)
+
 4.앱 실행 flutter run
 
 ## 프로젝트 구조 예시 
