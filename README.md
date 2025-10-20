@@ -18,6 +18,7 @@ samples, guidance on mobile development, and a full API reference.
 ## 프로젝트 구조 예시 
 
 lib/
+ 
  ├── main.dart               # 앱 진입점
  
  ├── models/                 # 데이터 모델 클래스 폴더
