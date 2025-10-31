@@ -47,15 +47,17 @@ views/main_screen.dart 은 임시 홈화면
 ### Navigator.pushNamed 방법을 현재 사용중입니다.
 
 main.dart
+```
 routes: {
         '/': (context) => const MainScreen(),
         '/home': (context) => const Center(child: Text('Home 화면')),
         '/generate': (context) => const GenerateScreen(),
         '/result': (context) => const ResultScreen(),  // 추가
       },
+```
 이런식으로 각자 생성한 views/~.dart 파일을 라우터에 등록 
 
 ### 사용예시
-views/main_screen.dart 27줄 (Navigator.pushNamed(context, '/generate');)
+views/main_screen.dart 27줄 (`Navigator.pushNamed(context, '/generate');`)
 
 
