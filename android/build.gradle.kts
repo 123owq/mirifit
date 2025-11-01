@@ -5,10 +5,14 @@ allprojects {
     }
 }
 
+<<<<<<< HEAD
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
         .get()
+=======
+val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
+>>>>>>> cc5e99a (Initial commit - Flutter project)
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {

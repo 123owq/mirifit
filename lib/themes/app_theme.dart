@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< HEAD
 class AppTheme {
   // 색상 상수 정의
   static const Color primaryColor = Color(0xFF5B9FED);
@@ -18,8 +19,27 @@ class AppTheme {
       fontFamily: 'NotoSans',
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
+=======
+class OverlayFrame extends StatelessWidget {
+  const OverlayFrame({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        color: Colors.black.withOpacity(0.2),
+        child: Center(
+          child: Image.asset(
+            'assets/images/frame_overlay.png',
+            fit: BoxFit.contain,
+          ),
+        ),
+>>>>>>> cc5e99a (Initial commit - Flutter project)
       ),
     );
   }
 }
+<<<<<<< HEAD
   
+=======
+>>>>>>> cc5e99a (Initial commit - Flutter project)

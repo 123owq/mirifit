@@ -4,6 +4,10 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
+<<<<<<< HEAD
+=======
+  permission_handler_windows
+>>>>>>> cc5e99a (Initial commit - Flutter project)
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

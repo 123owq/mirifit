@@ -19,7 +19,11 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
+<<<<<<< HEAD
   sdk: ^3.9.2
+=======
+  sdk: ^3.8.1
+>>>>>>> cc5e99a (Initial commit - Flutter project)
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -30,16 +34,30 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+<<<<<<< HEAD
+=======
+  photo_manager: ^3.5.1
+  camera: ^0.11.0+2
+  image_picker: ^1.1.2
+  permission_handler: ^11.0.1
+>>>>>>> cc5e99a (Initial commit - Flutter project)
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+<<<<<<< HEAD
   image_picker: ^1.0.4
+=======
+>>>>>>> cc5e99a (Initial commit - Flutter project)
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> cc5e99a (Initial commit - Flutter project)
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
   # activated in the `analysis_options.yaml` file located at the root of your
@@ -57,6 +75,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+<<<<<<< HEAD
+=======
+  assets:
+    - assets/images/frame_overlay.png
+    - assets/demo_images/
+>>>>>>> cc5e99a (Initial commit - Flutter project)
 
   # To add assets to your application, add an assets section, like this:
   # assets:
