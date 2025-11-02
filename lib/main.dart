@@ -10,7 +10,7 @@ import 'package:mirifit/views/result_screen.dart';
 import 'package:mirifit/views/gallery_screen.dart';
 import 'package:mirifit/views/camera_screen.dart';
 import 'package:mirifit/views/splash_screen.dart';
-
+import 'package:mirifit/views/loading_screen.dart';
 
 
 void main() {
@@ -41,6 +41,7 @@ class MirifitApp extends StatelessWidget {
 
         // README에 있던 파트
         '/generate': (context) => const GenerateScreen(),
+        '/loading': (context) => const LoadingScreen(),
         '/result': (context) => const ResultScreen(),
 
         '/gallery': (context) => const GalleryScreen(),

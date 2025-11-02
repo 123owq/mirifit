@@ -153,7 +153,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                     // ResultScreen으로 이동
                     Navigator.pushNamed(
                       context,
-                      '/result',
+                      '/loading',
                       arguments: {
                         'calories': _fitnessData.calories,
                         'weightGoal': _fitnessData.weightGoal,
