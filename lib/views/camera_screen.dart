@@ -51,7 +51,7 @@ class _CameraScreenState extends State<CameraScreen> {
               fit: StackFit.expand,
               children: [
                 CameraPreview(_controller!),
-                const OverlayFrame(),
+                OverlayFrame(),
                 Positioned(
                   top: 60,
                   left: 0,

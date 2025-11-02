@@ -1,14 +1,5 @@
 pluginManagement {
-<<<<<<< HEAD
-    val flutterSdkPath =
-        run {
-            val properties = java.util.Properties()
-            file("local.properties").inputStream().use { properties.load(it) }
-            val flutterSdkPath = properties.getProperty("flutter.sdk")
-            require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
-            flutterSdkPath
-        }
-=======
+    // 1. 충돌 마커와 중복된 블록을 삭제하고, 하나만 남깁니다.
     val flutterSdkPath = run {
         val properties = java.util.Properties()
         file("local.properties").inputStream().use { properties.load(it) }
@@ -16,7 +7,6 @@ pluginManagement {
         require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
         flutterSdkPath
     }
->>>>>>> cc5e99a (Initial commit - Flutter project)
 
     includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
@@ -29,11 +19,10 @@ pluginManagement {
 
 plugins {
     id("dev.flutter.flutter-plugin-loader") version "1.0.0"
-<<<<<<< HEAD
+
+    // 2. 충돌 마커를 삭제하고, 더 최신 버전인 8.9.1을 남깁니다.
     id("com.android.application") version "8.9.1" apply false
-=======
-    id("com.android.application") version "8.7.3" apply false
->>>>>>> cc5e99a (Initial commit - Flutter project)
+
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
 }
 

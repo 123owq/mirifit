@@ -28,3 +28,4 @@ flutter:
   assets:
     - assets/images/frame_overlay.png
     - assets/demo_images/
+    - assets/images/

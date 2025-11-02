@@ -5,14 +5,13 @@ allprojects {
     }
 }
 
-<<<<<<< HEAD
+// Git 충돌 마커(<<<<<, =====, >>>>>)를 삭제하고
+// 기능상 동일한 두 버전 중 하나만 남겼습니다.
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory
         .dir("../../build")
         .get()
-=======
-val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
->>>>>>> cc5e99a (Initial commit - Flutter project)
+
 rootProject.layout.buildDirectory.value(newBuildDir)
 
 subprojects {
