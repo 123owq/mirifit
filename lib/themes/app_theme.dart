@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-<<<<<<< HEAD
 class AppTheme {
   // 색상 상수 정의
   static const Color primaryColor = Color(0xFF5B9FED);
@@ -10,7 +9,7 @@ class AppTheme {
   static const Color textTertiary = Color(0xFF9E9E9E);
   static const Color cardBackground = Colors.white;
   static const Color caloriesIconColor = Color(0xFFFF6B6B);
-  
+
   // 앱 테마
   static ThemeData get lightTheme {
     return ThemeData(
@@ -19,27 +18,7 @@ class AppTheme {
       fontFamily: 'NotoSans',
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
-=======
-class OverlayFrame extends StatelessWidget {
-  const OverlayFrame({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        color: Colors.black.withOpacity(0.2),
-        child: Center(
-          child: Image.asset(
-            'assets/images/frame_overlay.png',
-            fit: BoxFit.contain,
-          ),
-        ),
->>>>>>> cc5e99a (Initial commit - Flutter project)
-      ),
-    );
-  }
-}
-<<<<<<< HEAD
-  
-=======
->>>>>>> cc5e99a (Initial commit - Flutter project)
+      ), // ★ 괄호와 쉼표 추가
+    ); // ★ ThemeData 닫는 괄호 추가
+  } // ★ lightTheme 닫는 중괄호 추가
+} // ★ AppTheme 닫는 중괄호 추가
