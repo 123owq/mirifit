@@ -125,7 +125,8 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
           },
           child: Container( // ★ 3. 기존 컨테이너
             decoration: BoxDecoration(
-              // ...
+              color: Colors.grey[300], // 회색 배경
+              borderRadius: BorderRadius.circular(12),
             ),
             child: Center(child: Text(text, style: TextStyle(color: Colors.grey[600]))),
           ),
