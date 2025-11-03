@@ -23,7 +23,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
   final List<String> demoImages = const [
     'assets/demo_images/1.jpg',
     'assets/demo_images/2.jpg',
-    'assets/demo_images/3.jpg',
+    'assets:demo_images/3.jpg',
     'assets/demo_images/4.jpg',
     'assets/demo_images/5.jpg',
     'assets/demo_images/6.jpg'
@@ -94,10 +94,27 @@ class _GalleryScreenState extends State<GalleryScreen> {
         ),
         itemCount: itemCount,
         itemBuilder: (context, index) {
-          // 첫 칸 카메라 버튼
+          // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+          // ★ 첫 칸 카메라 버튼 수정 ★
+          // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
           if (index == 0) {
             return GestureDetector(
-              onTap: () => Navigator.pushNamed(context, '/camera'),
+              onTap: () async { // 1. async 추가
+                // 2. CameraScreen으로 이동하고, 사진 경로(imagePath)를 기다림
+                final imagePath = await Navigator.pushNamed(context, '/camera');
+
+                // 3. 사진을 성공적으로 찍었다면 (null이 아니라면)
+                if (imagePath != null && imagePath is String) {
+
+                  // 4. GalleryScreen을 닫고, MainScreen으로 "명령"을 전달
+                  if (mounted) {
+                    Navigator.pop(context, {
+                      'destination': 'generate', // "Generate 탭으로 가라"
+                      'path': imagePath,       // "이 사진을 가지고"
+                    });
+                  }
+                }
+              },
               child: Container(
                 color: Colors.grey[300],
                 child: const Icon(Icons.camera_alt, size: 36),

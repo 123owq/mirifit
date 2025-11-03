@@ -4,6 +4,7 @@ import '../widgets/calendar.dart';
 import 'profile_screen.dart';
 import 'progress_screen.dart';
 import 'generate_screen.dart';
+import 'dart:io';
 
 
 class MainScreen extends StatefulWidget {
@@ -15,6 +16,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  File? _imageForGenerate;
 
   @override
   Widget build(BuildContext context) {
@@ -23,9 +25,15 @@ class _MainScreenState extends State<MainScreen> {
       // 1. FAB (플로팅 액션 버튼) 추가: 홈 화면일 때만 표시 (_currentIndex == 0)
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
-        onPressed: () {
-          // + 버튼을 누르면 /gallery 경로로 이동 (사용자의 요구 사항)
-          Navigator.pushNamed(context, '/gallery');
+        onPressed: () async {
+
+          final result = await Navigator.pushNamed(context, '/gallery');
+          if (result != null && result is Map && result['destination'] == 'generate') {
+            setState(() {
+              _currentIndex = 2;
+              _imageForGenerate = File(result['path']);
+            });
+          }
         },
         // 디자인 설정 (이미지에서 본 것처럼 크게, 파란색으로 만듭니다)
         backgroundColor: Colors.blueAccent,
@@ -75,7 +83,10 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return const ProgressScreen();
       case 2:
-        return const GenerateScreen();
+        return GenerateScreen(
+          initialImage: _imageForGenerate,
+
+        );
       case 3:
         return const ProfileScreen();
       default:
