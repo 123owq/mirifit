@@ -29,7 +29,6 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
         backgroundColor: Colors.grey[100],
         elevation: 0,
         centerTitle: false,
-        // 뒤로가기 버튼 색상 수정
         iconTheme: const IconThemeData(color: Colors.black),
         title: Text(
           formattedDate,
@@ -99,7 +98,7 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     );
   }
 
-  // --- ★★★ 이 아래 함수들을 놓치셨습니다 ★★★ ---
+  // --- 헬퍼 위젯들 ---
 
   Widget _buildImagePlaceholders() {
     return Row(
@@ -115,17 +114,17 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
     return Expanded(
       child: AspectRatio(
         aspectRatio: 1.0,
-        child: GestureDetector( // ★ 1. 이 위젯으로 감싸기
+        child: GestureDetector(
           onTap: () {
             Navigator.pushNamed(
               context,
               '/full_screen_image',
-              arguments: text, // ★ 2. "User Image" 같은 텍스트 전달
+              arguments: text,
             );
           },
-          child: Container( // ★ 3. 기존 컨테이너
+          child: Container(
             decoration: BoxDecoration(
-              color: Colors.grey[300], // 회색 배경
+              color: Colors.grey[300],
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(child: Text(text, style: TextStyle(color: Colors.grey[600]))),
@@ -136,7 +135,6 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   }
 
   Widget _buildPeriodSelector() {
-    // ToggleButtons로 간단하게 구현
     return ToggleButtons(
       isSelected: List.generate(4, (index) => index == _selectedPeriodIndex),
       onPressed: (int index) {
@@ -208,12 +206,14 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
           children: [
             Text('몸무게 추이', style: TextStyle(color: Colors.grey[600])),
             const SizedBox(height: 16),
-            // (임시) 그래프 영역
-            Container(
-              height: 100,
-              width: double.infinity,
-              color: Colors.grey[200],
-              child: Center(child: Text('Line Chart Placeholder', style: TextStyle(color: Colors.grey[600]))),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'assets/images/graph.jpeg',
+                width: double.infinity,
+                height: 150,
+                fit: BoxFit.cover,
+              ),
             ),
           ],
         ),
@@ -270,7 +270,7 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   Widget _buildCalorieColumn(String title, String value, String unit) {
     return Column(
       children: [
-        Icon(Icons.restaurant, color: Colors.grey[400]), // (임시 아이콘)
+        Icon(Icons.restaurant, color: Colors.grey[400]),
         const SizedBox(height: 8),
         Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
         const SizedBox(height: 4),
@@ -282,4 +282,4 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
       ],
     );
   }
-} // <-- ★ _RecordDetailScreenState 클래스가 여기서 끝납니다.
+}
