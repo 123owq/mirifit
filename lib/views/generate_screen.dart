@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../widgets/custom_bottom_nav_bar.dart';
+
 import '../models/fitness_data.dart';
 
 
@@ -17,7 +17,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
   // double _calories = 1847;
   // double _weightGoal = 5.0;
   // String _selectedPeriod = '6개월';
-  int _currentIndex = 2;
+
 
   /////////model/// 하드코딩 대신 모델 사용
   late FitnessData _fitnessData;
@@ -42,163 +42,150 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          '이미지 선택',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF5B9FED),
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 칼로리 카드
-              _buildGoalCard(
-                title: '칼로리',
-                value: '${_fitnessData.calories.toInt()}',
-                subtitle: '목표 ${_fitnessData.caloriesGoal.toInt()}칼로리',
-                icon: Icons.local_fire_department,
-                iconColor: const Color(0xFFFF6B6B),
-                progress: _fitnessData.caloriesProgress,
-                onChanged: (value) {
-                  setState(() {
-                    _fitnessData = _fitnessData.copyWith(calories: value);
-                  });
-                },
-                min: 0,
-                max: 3000,
-              ),
-              
-              // 운동 카드
-              _buildInfoCard(
-                title: '운동',
-                value: _fitnessData.exerciseType,
-                subtitle: '${_fitnessData.exerciseDuration}분 소요',
-                icon: Icons.fitness_center,
-                iconColor: const Color(0xFF9E9E9E),
-              ),
-              
-              // 체중 목표 카드
-              _buildGoalCard(
-                title: '현재 목표',
-                value: '${_fitnessData.weightGoal.toInt()}kg 감량',
-                subtitle: '${_fitnessData.weightRemaining.toInt()}kg 남음',
-                icon: Icons.help_outline,
-                iconColor: const Color(0xFF9E9E9E),
-                progress: _fitnessData.weightProgress,
-                onChanged: (value) {
-                  setState(() {
-                    _fitnessData = _fitnessData.copyWith(weightGoal: value);
-                  });
-                },
-                min: 1,
-                max: 20,
-              ),
-
-
-              
-              // 기간 선택
-             const Text(
-                '기간 선택',
+    // 1. Scaffold, AppBar, BottomNavBar를 모두 제거합니다.
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 2. [추가] AppBar 대신 화면 상단 여백과 타이틀을 넣습니다.
+            const SizedBox(height: kToolbarHeight), // 시스템 상태 표시줄 만큼 여백
+            const Center(
+              child: Text(
+                '이미지 선택',
                 style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF666666),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF5B9FED),
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    //_fitnessData = _fitnessData.copyWith(selectedPeriod: period);
-                    child: _buildPeriodButton('6개월', _fitnessData.selectedPeriod == '6개월'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildPeriodButton('12개월', _fitnessData.selectedPeriod == '12개월'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildPeriodButton('18개월', _fitnessData.selectedPeriod == '18개월'),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildPeriodButton('24개월', _fitnessData.selectedPeriod == '24개월'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
+            ),
+            const SizedBox(height: 24), // 타이틀과 카드 사이 여백
 
-              // Generate Button
-              // "이미지 생성" 버튼 수정
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // ResultScreen으로 이동
-                    Navigator.pushNamed(
-                      context,
-                      '/loading',
-                      arguments: {
-                        'calories': _fitnessData.calories,
-                        'weightGoal': _fitnessData.weightGoal,
-                        'period': _fitnessData.selectedPeriod,
-                        'imagePath': _selectedImage?.path,
-                      },
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5B9FED),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.image, color: Colors.white),
-                      SizedBox(width: 8),
-                      Text(
-                        '이미지 생성',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
+            // 3. 기존 body의 Column 내용물은 그대로 둡니다.
+            // 칼로리 카드
+            _buildGoalCard(
+              title: '칼로리',
+              value: '${_fitnessData.calories.toInt()}',
+              subtitle: '목표 ${_fitnessData.caloriesGoal.toInt()}칼로리',
+              icon: Icons.local_fire_department,
+              iconColor: const Color(0xFFFF6B6B),
+              progress: _fitnessData.caloriesProgress,
+              onChanged: (value) {
+                setState(() {
+                  _fitnessData = _fitnessData.copyWith(calories: value);
+                });
+              },
+              min: 0,
+              max: 3000,
+            ),
+
+            // 운동 카드
+            _buildInfoCard(
+              title: '운동',
+              value: _fitnessData.exerciseType,
+              subtitle: '${_fitnessData.exerciseDuration}분 소요',
+              icon: Icons.fitness_center,
+              iconColor: const Color(0xFF9E9E9E),
+            ),
+
+            // 체중 목표 카드
+            _buildGoalCard(
+              title: '현재 목표',
+              value: '${_fitnessData.weightGoal.toInt()}kg 감량',
+              subtitle: '${_fitnessData.weightRemaining.toInt()}kg 남음',
+              icon: Icons.help_outline,
+              iconColor: const Color(0xFF9E9E9E),
+              progress: _fitnessData.weightProgress,
+              onChanged: (value) {
+                setState(() {
+                  _fitnessData = _fitnessData.copyWith(weightGoal: value);
+                });
+              },
+              min: 1,
+              max: 20,
+            ),
+
+            // 기간 선택
+            const Text(
+              '기간 선택',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF666666),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPeriodButton('6개월', _fitnessData.selectedPeriod == '6개월'),
                 ),
-              )
-              ,
-              const SizedBox(height: 24),
-            ],
-          ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildPeriodButton('12개월', _fitnessData.selectedPeriod == '12개월'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildPeriodButton('18개월', _fitnessData.selectedPeriod == '18개월'),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _buildPeriodButton('24개월', _fitnessData.selectedPeriod == '24개월'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+
+            // Generate Button (경로는 /loading으로 유지)
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pushNamed(
+                    context,
+                    '/loading',
+                    arguments: {
+                      'calories': _fitnessData.calories,
+                      'weightGoal': _fitnessData.weightGoal,
+                      'period': _fitnessData.selectedPeriod,
+                      'imagePath': _selectedImage?.path,
+                    },
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF5B9FED),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.image, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      '이미지 생성',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
         ),
-      ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
       ),
     );
   }

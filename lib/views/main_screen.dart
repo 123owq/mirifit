@@ -3,6 +3,7 @@ import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/calendar.dart';
 import 'profile_screen.dart';
 import 'progress_screen.dart';
+import 'generate_screen.dart';
 
 
 class MainScreen extends StatefulWidget {
@@ -43,11 +44,6 @@ class _MainScreenState extends State<MainScreen> {
           setState(() {
             _currentIndex = index;
           });
-          
-          // Generate 탭 클릭 시 Navigator.pushNamed 사용
-          if (index == 2) {
-            Navigator.pushNamed(context, '/generate');
-          }
         },
       ),
     );
@@ -79,9 +75,7 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return const ProgressScreen();
       case 2:
-        return const Center(
-          child: Text('Generate 탭', style: TextStyle(fontSize: 24)),
-        );
+        return const GenerateScreen();
       case 3:
         return const ProfileScreen();
       default:
