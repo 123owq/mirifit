@@ -1,14 +1,16 @@
-import 'package.flutter/material.dart';
-// import 'dart:io'; // ★ 더 이상 필요 없으므로 삭제해도 됩니다.
+import 'package:flutter/material.dart';
+import 'dart:io'; // ★ 1. Image.file을 사용하기 위해 import
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 1. LoadingScreen에서 데이터를 받긴 하지만, imagePath는 사용하지 않습니다.
-    // final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    // final String? imagePath = args?['imagePath'] as String?;
+    // 2. 전달받은 데이터 (GenerateScreen -> LoadingScreen -> ResultScreen)
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+
+    // 3. imagePath를 추출합니다.
+    final String? imagePath = args?['imagePath'] as String?;
 
     return Scaffold(
       appBar: AppBar(
@@ -31,7 +33,7 @@ class ResultScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
 
-              // ★ 2. [수정됨] 생성된 이미지 영역
+              // ★ 4. [수정됨] 생성된 이미지 영역
               Container(
                 width: double.infinity,
                 height: 400,
@@ -39,11 +41,20 @@ class ResultScreen extends StatelessWidget {
                   color: const Color(0xFFD3D3D3),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                // 3. 무조건 'assets/after.png'를 보여줍니다.
+                // 5. 이미지가 있으면 Image.file, 없으면 after.png
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: Image.asset( // ★ Image.file -> Image.asset
-                    'assets/after.png', // ★ 경로를 직접 지정
+                  child: imagePath != null
+                      ?
+                  // 5-A: 이미지가 있는 경우 (Image.file 사용)
+                  Image.file(
+                    File(imagePath), // 전달받은 경로의 파일 표시
+                    fit: BoxFit.cover,
+                  )
+                      :
+                  // 5-B: 이미지가 없는 경우 (after.png 표시)
+                  Image.asset(
+                    'assets/images/after.png', // ★★★ imagePath가 null일 때 after.png를 보여줌
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -51,6 +62,7 @@ class ResultScreen extends StatelessWidget {
               const SizedBox(height: 32),
 
               // (이 아래의 설명 카드, 버튼 등은 모두 기존과 동일합니다)
+
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
