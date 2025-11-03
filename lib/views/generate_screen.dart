@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-
 import '../models/fitness_data.dart';
-
 
 class GenerateScreen extends StatefulWidget {
   const GenerateScreen({super.key});
@@ -14,20 +12,13 @@ class GenerateScreen extends StatefulWidget {
 
 class _GenerateScreenState extends State<GenerateScreen> {
   File? _selectedImage;
-  // double _calories = 1847;
-  // double _weightGoal = 5.0;
-  // String _selectedPeriod = '6개월';
-
-
-  /////////model/// 하드코딩 대신 모델 사용
   late FitnessData _fitnessData;
-  
+
   @override
   void initState() {
     super.initState();
     _fitnessData = FitnessData(); // 초기 데이터
   }
-  ///////////////////////
 
   final ImagePicker _picker = ImagePicker();
 
@@ -42,15 +33,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 1. Scaffold, AppBar, BottomNavBar를 모두 제거합니다.
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 2. [추가] AppBar 대신 화면 상단 여백과 타이틀을 넣습니다.
-            const SizedBox(height: kToolbarHeight), // 시스템 상태 표시줄 만큼 여백
+            const SizedBox(height: kToolbarHeight),
             const Center(
               child: Text(
                 '이미지 선택',
@@ -61,27 +50,21 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 24), // 타이틀과 카드 사이 여백
+            const SizedBox(height: 24),
 
-            // 3. 기존 body의 Column 내용물은 그대로 둡니다.
-            // 칼로리 카드
-            _buildGoalCard(
+            // ★ 1. 칼로리 카드: 새 위젯인 _buildProgressInfoCard 사용
+            _buildProgressInfoCard(
               title: '칼로리',
               value: '${_fitnessData.calories.toInt()}',
               subtitle: '목표 ${_fitnessData.caloriesGoal.toInt()}칼로리',
               icon: Icons.local_fire_department,
               iconColor: const Color(0xFFFF6B6B),
-              progress: _fitnessData.caloriesProgress,
-              onChanged: (value) {
-                setState(() {
-                  _fitnessData = _fitnessData.copyWith(calories: value);
-                });
-              },
-              min: 0,
-              max: 3000,
+              progress: _fitnessData.caloriesProgress, // ★ 진행률 데이터 전달
             ),
 
-            // 운동 카드
+            const SizedBox(height: 16),
+
+            // ★ 2. 운동 카드: 기존 _buildInfoCard 사용 (막대 그래프 없음)
             _buildInfoCard(
               title: '운동',
               value: _fitnessData.exerciseType,
@@ -90,24 +73,21 @@ class _GenerateScreenState extends State<GenerateScreen> {
               iconColor: const Color(0xFF9E9E9E),
             ),
 
-            // 체중 목표 카드
-            _buildGoalCard(
+            const SizedBox(height: 16),
+
+            // ★ 3. 체중 목표 카드: 새 위젯인 _buildProgressInfoCard 사용
+            _buildProgressInfoCard(
               title: '현재 목표',
               value: '${_fitnessData.weightGoal.toInt()}kg 감량',
               subtitle: '${_fitnessData.weightRemaining.toInt()}kg 남음',
               icon: Icons.help_outline,
               iconColor: const Color(0xFF9E9E9E),
-              progress: _fitnessData.weightProgress,
-              onChanged: (value) {
-                setState(() {
-                  _fitnessData = _fitnessData.copyWith(weightGoal: value);
-                });
-              },
-              min: 1,
-              max: 20,
+              progress: _fitnessData.weightProgress, // ★ 진행률 데이터 전달
             ),
 
-            // 기간 선택
+            const SizedBox(height: 24),
+
+            // 기간 선택 (기존과 동일)
             const Text(
               '기간 선택',
               style: TextStyle(
@@ -142,7 +122,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
             ),
             const SizedBox(height: 32),
 
-            // Generate Button (경로는 /loading으로 유지)
+            // Generate Button (기존과 동일)
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -190,17 +170,14 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // 목표 카드 빌더 (슬라이더 포함)
-  Widget _buildGoalCard({
+  // ★ 4. [새로 추가된 위젯] (막대 그래프 포함)
+  Widget _buildProgressInfoCard({
     required String title,
     required String value,
     required String subtitle,
     required IconData icon,
     required Color iconColor,
-    required double progress,
-    required ValueChanged<double> onChanged,
-    required double min,
-    required double max,
+    required double progress, // (0.0 ~ 1.0 사이의 값)
   }) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -215,56 +192,57 @@ class _GenerateScreenState extends State<GenerateScreen> {
           ),
         ],
       ),
-      child: Column(
+      child: Column( // 정보 + 막대그래프를 위해 Column 사용
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // 상단 정보 부분
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF666666),
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF666666),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF9E9E9E),
+                    ),
+                  ),
+                ],
               ),
-              Icon(icon, color: iconColor, size: 24),
+              Icon(icon, color: iconColor, size: 32),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A1A),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w400,
-              color: Color(0xFF9E9E9E),
-            ),
-          ),
-          const SizedBox(height: 12),
-          SliderTheme(
-            data: SliderThemeData(
-              trackHeight: 6,
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-              overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
-              activeTrackColor: const Color(0xFF5B9FED),
-              inactiveTrackColor: const Color(0xFFE5E5E5),
-              thumbColor: const Color(0xFF5B9FED),
-            ),
-            child: Slider(
-              value: progress.clamp(0.0, 1.0) * (max - min) + min,
-              min: min,
-              max: max,
-              onChanged: onChanged,
+          const SizedBox(height: 16), // 정보와 막대 그래프 사이 여백
+
+          // 하단 막대 그래프
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10), // 막대 모서리를 둥글게
+            child: LinearProgressIndicator(
+              value: progress.clamp(0.0, 1.0), // 0.0 ~ 1.0 사이 값
+              minHeight: 8, // 막대 두께
+              backgroundColor: const Color(0xFFE5E5E5), // 배경색
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF5B9FED)), // 진행색
             ),
           ),
         ],
@@ -272,7 +250,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // 정보 카드 빌더
+  // ★ 5. [기존 위젯] (정보만 표시)
   Widget _buildInfoCard({
     required String title,
     required String value,
@@ -333,7 +311,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // 기간 선택 버튼 빌더
+  // 기간 선택 버튼 빌더 (기존과 동일)
   Widget _buildPeriodButton(String period, bool isSelected) {
     return GestureDetector(
       onTap: () {
