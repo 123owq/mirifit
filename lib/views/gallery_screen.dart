@@ -27,6 +27,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     'assets/demo_images/4.jpg',
     'assets/demo_images/5.jpg',
     'assets/demo_images/6.jpg'
+    'assets/demo_images/before.png'
   ];
 
   @override

@@ -144,20 +144,23 @@ class GoalByDateScreen extends StatelessWidget {
         width: double.infinity, // 너비 꽉 채우기
         color: Colors.grey[300], // (디자인의 회색 배경)
 
-        child: GestureDetector( // ★ 1. 이 위젯으로 감싸기
+        child: GestureDetector(
           onTap: () {
             Navigator.pushNamed(
               context,
               '/full_screen_image',
-              arguments: 'Generated Future Image', // ★ 2. 텍스트 전달
+              // 'Generated Future Image' 대신 이미지 경로를 전달
+              arguments: 'assets/after.png',
             );
           },
-          child: Center( // ★ 3. 기존 센터 위젯
-            child: Text(
-              'Generated Future Image',
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+          // Container 대신 Image.asset을 바로 사용
+          child: Image.asset(
+            'assets/after.png', // 1. after.png 이미지를 불러옵니다.
+            height: 350, // 2. (높이는 이전처럼 350으로 고정)
+            width: double.infinity,
+            fit: BoxFit.cover, // 3. 이미지가 꽉 차도록 설정
           ),
+
         ),
       ),
     );

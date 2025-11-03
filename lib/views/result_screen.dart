@@ -1,13 +1,15 @@
-import 'package:flutter/material.dart';
+import 'package.flutter/material.dart';
+// import 'dart:io'; // ★ 더 이상 필요 없으므로 삭제해도 됩니다.
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 전달받은 데이터 (선택 사항)
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    
+    // 1. LoadingScreen에서 데이터를 받긴 하지만, imagePath는 사용하지 않습니다.
+    // final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    // final String? imagePath = args?['imagePath'] as String?;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -28,8 +30,8 @@ class ResultScreen extends StatelessWidget {
           child: Column(
             children: [
               const SizedBox(height: 20),
-              
-              // 생성된 이미지 영역
+
+              // ★ 2. [수정됨] 생성된 이미지 영역
               Container(
                 width: double.infinity,
                 height: 400,
@@ -37,29 +39,18 @@ class ResultScreen extends StatelessWidget {
                   color: const Color(0xFFD3D3D3),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.fitness_center,
-                      size: 80,
-                      color: Colors.white.withOpacity(0.7),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Generated Image',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white.withOpacity(0.7),
-                      ),
-                    ),
-                  ],
+                // 3. 무조건 'assets/after.png'를 보여줍니다.
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset( // ★ Image.file -> Image.asset
+                    'assets/after.png', // ★ 경로를 직접 지정
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
               const SizedBox(height: 32),
-              
-              // 설명 카드
+
+              // (이 아래의 설명 카드, 버튼 등은 모두 기존과 동일합니다)
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -69,10 +60,10 @@ class ResultScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.favorite,
                       size: 48,
-                      color: const Color(0xFF5B9FED),
+                      color: Color(0xFF5B9FED),
                     ),
                     const SizedBox(height: 16),
                     const Text(
@@ -107,14 +98,12 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-              
-              // 다시 생성하기 버튼
+
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
-                    // 이전 화면으로 돌아가기
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -142,14 +131,12 @@ class ResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              
-              // 이미지 공유 버튼
+
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: OutlinedButton(
                   onPressed: () {
-                    // 공유 기능 (추후 구현)
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(content: Text('공유 기능 준비 중입니다')),
                     );
