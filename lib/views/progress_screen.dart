@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../widgets/calendar.dart'; // 1. 캘린더 위젯 가져오기
 
 class ProgressScreen extends StatelessWidget {
@@ -6,6 +7,16 @@ class ProgressScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 2. "오늘" 날짜 가져오기
+    final DateTime today = DateTime.now();
+
+    // 3. (임시) 최근 3일간의 더미 데이터
+    // (나중에는 이 부분을 실제 데이터베이스에서 불러와야 합니다)
+    final List<Map<String, dynamic>> dummyData = [
+      {'activity': '75', 'calories': '468', 'achieved': true}, // 오늘
+      {'activity': '30', 'calories': '285', 'achieved': true}, // 어제
+      {'activity': '40', 'calories': '308', 'achieved': false}, // 그제
+    ];
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -26,29 +37,19 @@ class ProgressScreen extends StatelessWidget {
               const CalendarWidget(isInitiallyExpanded: true),
               const SizedBox(height: 16),
 
-              // 3. 일일 기록 카드 리스트 (디자인 예시)
-              // (나중에는 이 부분을 ListView.builder로 바꾸면 됩니다.)
-              _buildRecordCard(
-                context,
-                date: '06.10.TUE',
-                activityTime: '75',
-                calories: '468',
-                isGoalAchieved: true,
-              ),
-              _buildRecordCard(
-                context,
-                date: '06.09.MON',
-                activityTime: '30',
-                calories: '285',
-                isGoalAchieved: true,
-              ),
-              _buildRecordCard(
-                context,
-                date: '06.08.SUN',
-                activityTime: '40',
-                calories: '308',
-                isGoalAchieved: false,
-              ),
+              ...List.generate(3, (index) {
+                // index=0: 오늘, index=1: 어제, index=2: 그제
+                final DateTime date = today.subtract(Duration(days: index));
+                final String formattedDate = DateFormat('MM.dd.E', 'ko_KR').format(date);
+
+                return _buildRecordCard(
+                  context, // ★ 6. context 전달
+                  date: formattedDate,
+                  activityTime: dummyData[index]['activity']!,
+                  calories: dummyData[index]['calories']!,
+                  isGoalAchieved: dummyData[index]['achieved']!,
+                );
+              }),
             ],
           ),
         ),
