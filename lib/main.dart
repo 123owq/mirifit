@@ -14,6 +14,7 @@ import 'package:mirifit/views/splash_screen.dart';
 import 'package:mirifit/views/loading_screen.dart';
 import 'package:mirifit/views/record_detail_screen.dart';
 import 'package:mirifit/views/goal_by_date_screen.dart';
+import 'package:mirifit/views/full_screen_image_screen.dart';
 
 void main() async { // 1. async 추가
   // 2. Flutter 엔진이 플러그인을 로드할 준비가 되도록 보장
@@ -49,6 +50,7 @@ class MirifitApp extends StatelessWidget {
 
         '/record_detail': (context) => const RecordDetailScreen(),
         '/goal_by_date': (context) => const GoalByDateScreen(),
+        '/full_screen_image': (context) => const FullScreenImageScreen(),
 
         // README에 있던 파트
         '/generate': (context) => const GenerateScreen(),

@@ -104,23 +104,31 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   Widget _buildImagePlaceholders() {
     return Row(
       children: [
-        _buildImagePlaceholder('User Image'),
+        _buildImagePlaceholder(context,'User Image'),
         const SizedBox(width: 12),
-        _buildImagePlaceholder('Generated Image'),
+        _buildImagePlaceholder(context,'Generated Image'),
       ],
     );
   }
 
-  Widget _buildImagePlaceholder(String text) {
+  Widget _buildImagePlaceholder(BuildContext context, String text) {
     return Expanded(
       child: AspectRatio(
-        aspectRatio: 1.0, // 1:1 비율
-        child: Container(
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(12),
+        aspectRatio: 1.0,
+        child: GestureDetector( // ★ 1. 이 위젯으로 감싸기
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/full_screen_image',
+              arguments: text, // ★ 2. "User Image" 같은 텍스트 전달
+            );
+          },
+          child: Container( // ★ 3. 기존 컨테이너
+            decoration: BoxDecoration(
+              // ...
+            ),
+            child: Center(child: Text(text, style: TextStyle(color: Colors.grey[600]))),
           ),
-          child: Center(child: Text(text, style: TextStyle(color: Colors.grey[600]))),
         ),
       ),
     );

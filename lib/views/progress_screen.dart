@@ -29,18 +29,21 @@ class ProgressScreen extends StatelessWidget {
               // 3. 일일 기록 카드 리스트 (디자인 예시)
               // (나중에는 이 부분을 ListView.builder로 바꾸면 됩니다.)
               _buildRecordCard(
+                context,
                 date: '06.10.TUE',
                 activityTime: '75',
                 calories: '468',
                 isGoalAchieved: true,
               ),
               _buildRecordCard(
+                context,
                 date: '06.09.MON',
                 activityTime: '30',
                 calories: '285',
                 isGoalAchieved: true,
               ),
               _buildRecordCard(
+                context,
                 date: '06.08.SUN',
                 activityTime: '40',
                 calories: '308',
@@ -54,7 +57,7 @@ class ProgressScreen extends StatelessWidget {
   }
 
   // ---------- 위젯 분리: 일일 기록 카드 ----------
-  Widget _buildRecordCard({
+  Widget _buildRecordCard(BuildContext context,{
     required String date,
     required String activityTime,
     required String calories,
@@ -94,12 +97,32 @@ class ProgressScreen extends StatelessWidget {
             // 카드 하단 (이미지, 통계)
             Row(
               children: [
-                // 4. [필수] 'assets/user_image.png' (임시) 파일이 필요합니다
-                Image.asset(
-                  'assets/images/my_profile_avatar.png',
-                  width: 80,
-                  height: 80,
-                  fit: BoxFit.cover,
+                // 4. 회색 'User Image' 플레이스홀더로 변경
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/full_screen_image',
+                      arguments: 'User Image', // 이미지 대신 텍스트 전달
+                    );
+                  },
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300], // 회색 배경
+                      borderRadius: BorderRadius.circular(12), // 둥근 모서리
+                    ),
+                    child: Center(
+                      child: Text(
+                        'User Image',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 16),
                 // 통계

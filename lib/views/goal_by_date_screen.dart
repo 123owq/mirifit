@@ -29,7 +29,7 @@ class GoalByDateScreen extends StatelessWidget {
             const SizedBox(height: 16),
 
             // 2. 미래 이미지
-            _buildFutureImage(),
+            _buildFutureImage(context),
             const SizedBox(height: 16),
 
             // 3. 목표 설정
@@ -134,19 +134,29 @@ class GoalByDateScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFutureImage() {
+  Widget _buildFutureImage(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
       child: Container(
-        height: 300,
-        width: double.infinity,
-        color: Colors.grey[300],
-        child: Center(
-          child: Text(
-            'Generated Future Image',
-            style: TextStyle(color: Colors.grey[600]),
+        height: 350, // (디자인에 맞는 적절한 높이값, 예: 350)
+        width: double.infinity, // 너비 꽉 채우기
+        color: Colors.grey[300], // (디자인의 회색 배경)
+
+        child: GestureDetector( // ★ 1. 이 위젯으로 감싸기
+          onTap: () {
+            Navigator.pushNamed(
+              context,
+              '/full_screen_image',
+              arguments: 'Generated Future Image', // ★ 2. 텍스트 전달
+            );
+          },
+          child: Center( // ★ 3. 기존 센터 위젯
+            child: Text(
+              'Generated Future Image',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
           ),
         ),
       ),
