@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // (kIsWeb) 웹인지 확인
-import 'dart:io'; // Image.file
+import 'package:flutter/foundation.dart'; // kIsWeb
+import 'dart:io'; // File
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-    final String? imagePath = args?['imagePath'] as String?;
+    // arguments에서 imagePath 또는 File 가져오기
+    final args = ModalRoute.of(context)?.settings.arguments;
+    File? imageFile;
+
+    if (args is Map<String, dynamic>) {
+      final imageArg = args['imagePath'];
+      if (imageArg is String) {
+        imageFile = File(imageArg);
+      } else if (imageArg is File) {
+        imageFile = imageArg;
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -31,45 +41,24 @@ class ResultScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
 
+              // 이미지 표시 영역
               Container(
                 width: double.infinity,
-
                 decoration: BoxDecoration(
                   color: const Color(0xFFD3D3D3),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: AspectRatio( // ★★★ AspectRatio 위젯 추가 ★★★
+                  child: AspectRatio(
                     aspectRatio: 9 / 16,
-
-                  // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-                  // ★ 이 부분이 더 간단하게 수정되었습니다 ★
-                  // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-                  child: kIsWeb
-                      ?
-                  // 1. 웹(크롬)이면 무조건 after.png 표시
-                  Image.asset(
-                    'assets/images/after.png',
-                    fit: BoxFit.cover,
-                  )
-                      :
-                  // 2. 모바일이면 이전 로직 그대로 사용
-                  imagePath != null
-                      ? Image.file(
-                    File(imagePath),
-                    fit: BoxFit.cover,
-                  )
-                      : Image.asset( // 모바일에서 이미지가 없을 때도 after.png
-                    'assets/images/after.png',
-                    fit: BoxFit.cover,
+                    child: _buildImageWidget(imageFile),
                   ),
                 ),
               ),
               const SizedBox(height: 32),
 
-              // (이 아래의 설명 카드, 버튼 등은 모두 기존과 동일합니다)
-
+              // 설명 카드
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -78,14 +67,14 @@ class ResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
-                  children: [
-                    const Icon(
+                  children: const [
+                    Icon(
                       Icons.favorite,
                       size: 48,
                       color: Color(0xFF5B9FED),
                     ),
-                    const SizedBox(height: 16),
-                    const Text(
+                    SizedBox(height: 16),
+                    Text(
                       '피트니스 목표를 착실히 달성하고 있네요.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -94,8 +83,8 @@ class ResultScreen extends StatelessWidget {
                         color: Color(0xFF1A1A1A),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    const Text(
+                    SizedBox(height: 12),
+                    Text(
                       '이 이미지는 매일 쌓아가는 당신의 노력과 강인함을 보여줘요.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -104,8 +93,8 @@ class ResultScreen extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    const Text(
+                    SizedBox(height: 8),
+                    Text(
                       '계속 힘내세요',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -118,6 +107,7 @@ class ResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
+              // 다시 생성 버튼
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -151,6 +141,7 @@ class ResultScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
 
+              // 공유 버튼
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -192,5 +183,25 @@ class ResultScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Web/Android 공용 이미지 처리
+  Widget _buildImageWidget(File? imageFile) {
+    if (kIsWeb) {
+      return Image.asset(
+        'assets/images/after.png',
+        fit: BoxFit.cover,
+      );
+    } else if (imageFile != null) {
+      return Image.file(
+        imageFile,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return Image.asset(
+        'assets/images/after.png',
+        fit: BoxFit.cover,
+      );
+    }
   }
 }

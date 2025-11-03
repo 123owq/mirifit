@@ -150,12 +150,12 @@ class GoalByDateScreen extends StatelessWidget {
               context,
               '/full_screen_image',
               // 'Generated Future Image' 대신 이미지 경로를 전달
-              arguments: 'assets/after.png',
+              arguments: 'assets/images/after.png',
             );
           },
           // Container 대신 Image.asset을 바로 사용
           child: Image.asset(
-            'assets/after.png', // 1. after.png 이미지를 불러옵니다.
+            'assets/images/after.png', // 1. after.png 이미지를 불러옵니다.
             height: 350, // 2. (높이는 이전처럼 350으로 고정)
             width: double.infinity,
             fit: BoxFit.cover, // 3. 이미지가 꽉 차도록 설정
