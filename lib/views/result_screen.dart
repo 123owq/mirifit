@@ -1,15 +1,13 @@
 import 'package:flutter/material.dart';
-import 'dart:io'; // ★ 1. Image.file을 사용하기 위해 import
+import 'package:flutter/foundation.dart'; // (kIsWeb) 웹인지 확인
+import 'dart:io'; // Image.file
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 2. 전달받은 데이터 (GenerateScreen -> LoadingScreen -> ResultScreen)
     final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-
-    // 3. imagePath를 추출합니다.
     final String? imagePath = args?['imagePath'] as String?;
 
     return Scaffold(
@@ -33,28 +31,37 @@ class ResultScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
 
-              // ★ 4. [수정됨] 생성된 이미지 영역
               Container(
                 width: double.infinity,
-                height: 400,
+
                 decoration: BoxDecoration(
                   color: const Color(0xFFD3D3D3),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                // 5. 이미지가 있으면 Image.file, 없으면 after.png
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
-                  child: imagePath != null
+                  child: AspectRatio( // ★★★ AspectRatio 위젯 추가 ★★★
+                    aspectRatio: 9 / 16,
+
+                  // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                  // ★ 이 부분이 더 간단하게 수정되었습니다 ★
+                  // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+                  child: kIsWeb
                       ?
-                  // 5-A: 이미지가 있는 경우 (Image.file 사용)
-                  Image.file(
-                    File(imagePath), // 전달받은 경로의 파일 표시
+                  // 1. 웹(크롬)이면 무조건 after.png 표시
+                  Image.asset(
+                    'assets/images/after.png',
                     fit: BoxFit.cover,
                   )
                       :
-                  // 5-B: 이미지가 없는 경우 (after.png 표시)
-                  Image.asset(
-                    'assets/images/after.png', // ★★★ imagePath가 null일 때 after.png를 보여줌
+                  // 2. 모바일이면 이전 로직 그대로 사용
+                  imagePath != null
+                      ? Image.file(
+                    File(imagePath),
+                    fit: BoxFit.cover,
+                  )
+                      : Image.asset( // 모바일에서 이미지가 없을 때도 after.png
+                    'assets/images/after.png',
                     fit: BoxFit.cover,
                   ),
                 ),

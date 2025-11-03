@@ -5,11 +5,13 @@ import '../models/fitness_data.dart';
 
 class GenerateScreen extends StatefulWidget {
   // 1. MainScreen에서 이미지를 전달받기 위한 파라미터
-  final File? initialImage;
+  final String? initialImagePath;
+  final VoidCallback onClearImage; // 이미지를 지우기 위한 콜백
 
   const GenerateScreen({
     super.key,
-    this.initialImage,
+    this.initialImagePath,
+    required this.onClearImage, // MainScreen에서 받아옴
   });
 
   @override
@@ -17,8 +19,8 @@ class GenerateScreen extends StatefulWidget {
 }
 
 class _GenerateScreenState extends State<GenerateScreen> {
-  // 2. GenerateScreen이 자체적으로 관리하는 이미지 변수
-  File? _selectedImage;
+  // 2. GenerateScreen이 자체적으로 관리하는 이미지 경로 변수
+  String? _selectedImagePath;
   late FitnessData _fitnessData;
   final ImagePicker _picker = ImagePicker(); // 갤러리 접근용
 
@@ -26,18 +28,18 @@ class _GenerateScreenState extends State<GenerateScreen> {
   void initState() {
     super.initState();
     _fitnessData = FitnessData();
-    // 3. 위젯이 처음 생성될 때, MainScreen에서 받은 이미지로 초기화
-    _selectedImage = widget.initialImage;
+    // 3. 위젯이 처음 생성될 때, MainScreen에서 받은 이미지 경로로 초기화
+    _selectedImagePath = widget.initialImagePath;
   }
 
   // 4. (중요) MainScreen의 상태가 바뀌어 GenerateScreen이 다시 빌드될 때
-  // 새로운 initialImage를 반영하기 위한 함수
+  // (예: Home -> Generate 탭 이동 시) 새로운 initialImagePath를 반영
   @override
   void didUpdateWidget(covariant GenerateScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialImage != oldWidget.initialImage) {
+    if (widget.initialImagePath != oldWidget.initialImagePath) {
       setState(() {
-        _selectedImage = widget.initialImage;
+        _selectedImagePath = widget.initialImagePath;
       });
     }
   }
@@ -60,13 +62,15 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
     if (imagePath != null) {
       setState(() {
-        _selectedImage = File(imagePath!);
+        // ★★★ imagePath(String)를 _selectedImagePath(String?)에 바로 저장 ★★★
+        _selectedImagePath = imagePath;
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    // (build 메서드의 나머지 부분은 2:13 PM 코드와 동일합니다)
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -75,22 +79,15 @@ class _GenerateScreenState extends State<GenerateScreen> {
           children: [
             const SizedBox(height: kToolbarHeight),
             const Center(
-              child: Text(
-                '이미지 선택',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF5B9FED),
-                ),
-              ),
+              child: Text('이미지 선택', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF5B9FED))),
             ),
             const SizedBox(height: 24),
 
-            // 이미지 선택기 UI
+            // 6. [수정됨] 이미지 선택기 UI
             _buildImagePicker(),
             const SizedBox(height: 24),
 
-            // 칼로리 카드 (막대 그래프 포함)
+            // ... (칼로리, 운동, 체중 카드 등은 2:13 PM 코드와 동일) ...
             _buildProgressInfoCard(
               title: '칼로리',
               value: '${_fitnessData.calories.toInt()}',
@@ -99,10 +96,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
               iconColor: const Color(0xFFFF6B6B),
               progress: _fitnessData.caloriesProgress,
             ),
-
             const SizedBox(height: 16),
-
-            // 운동 카드
             _buildInfoCard(
               title: '운동',
               value: _fitnessData.exerciseType,
@@ -110,10 +104,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
               icon: Icons.fitness_center,
               iconColor: const Color(0xFF9E9E9E),
             ),
-
             const SizedBox(height: 16),
-
-            // 체중 목표 카드
             _buildProgressInfoCard(
               title: '현재 목표',
               value: '${_fitnessData.weightGoal.toInt()}kg 감량',
@@ -122,45 +113,28 @@ class _GenerateScreenState extends State<GenerateScreen> {
               iconColor: const Color(0xFF9E9E9E),
               progress: _fitnessData.weightProgress,
             ),
-
             const SizedBox(height: 24),
-
-            // 기간 선택
-            const Text(
-              '기간 선택',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF666666),
-              ),
-            ),
+            // ... (기간 선택 버튼들 - 2:13 PM 코드와 동일) ...
+            const Text('기간 선택', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666))),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildPeriodButton('6개월', _fitnessData.selectedPeriod == '6개월'),
-                ),
+                Expanded(child: _buildPeriodButton('6개월', _fitnessData.selectedPeriod == '6개월')),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildPeriodButton('12개월', _fitnessData.selectedPeriod == '12개월'),
-                ),
+                Expanded(child: _buildPeriodButton('12개월', _fitnessData.selectedPeriod == '12개월')),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildPeriodButton('18개월', _fitnessData.selectedPeriod == '18개월'),
-                ),
+                Expanded(child: _buildPeriodButton('18개월', _fitnessData.selectedPeriod == '18개월')),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildPeriodButton('24개월', _fitnessData.selectedPeriod == '24개월'),
-                ),
+                Expanded(child: _buildPeriodButton('24개월', _fitnessData.selectedPeriod == '24개월')),
               ],
             ),
             const SizedBox(height: 32),
 
-            // 이미지 생성 버튼
+            // 7. [수정됨] 이미지 생성 버튼
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -173,13 +147,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
                       'calories': _fitnessData.calories,
                       'weightGoal': _fitnessData.weightGoal,
                       'period': _fitnessData.selectedPeriod,
-                      'imagePath': _selectedImage?.path, // 선택된 이미지 경로 전달
+                      'imagePath': _selectedImagePath, // ★ Generate 탭의 현재 이미지 경로
                     },
                   );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B9FED),
-                  shape: RoundedRectangleBorder(
+                  shape: RoundedRectangleBorder( // (오타 수정됨)
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 0,
@@ -189,14 +163,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                   children: [
                     Icon(Icons.image, color: Colors.white),
                     SizedBox(width: 8),
-                    Text(
-                      '이미지 생성',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
+                    Text('이미지 생성', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white)),
                   ],
                 ),
               ),
@@ -210,39 +177,41 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   // --- 헬퍼 위젯들 ---
 
+  // 8. [수정됨] 이미지 피커 UI
   Widget _buildImagePicker() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          '선택 이미지',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: Color(0xFF666666),
-          ),
-        ),
+        const Text('선택된 이미지', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF666666))),
         const SizedBox(height: 12),
-        _selectedImage != null
+        _selectedImagePath != null
             ?
         Stack(
           alignment: Alignment.topRight,
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                _selectedImage!,
+              // ★ 9. [수정됨] 경로를 확인하여 Asset 또는 File 이미지 표시
+              child: _selectedImagePath!.startsWith('assets/')
+                  ? Image.asset( // Asset 이미지 (크롬 데모)
+                _selectedImagePath!,
+                width: double.infinity,
+                height: 200,
+                fit: BoxFit.cover,
+              )
+                  : Image.file( // File 이미지 (카메라/갤러리)
+                File(_selectedImagePath!),
                 width: double.infinity,
                 height: 200,
                 fit: BoxFit.cover,
               ),
             ),
-            // 이미지 삭제(x) 버튼
             IconButton(
               icon: const Icon(Icons.cancel, color: Colors.black54),
               onPressed: () {
                 setState(() {
-                  _selectedImage = null;
+                  _selectedImagePath = null;
+                  widget.onClearImage(); // ★ MainScreen에도 이미지가 지워졌다고 알림
                 });
               },
             )
@@ -252,11 +221,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
         Container(
           width: double.infinity,
           height: 150,
-          decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey[300]!)
-          ),
+          decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey[300]!)),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -264,19 +229,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 onPressed: () => _pickImage(ImageSource.camera),
                 icon: const Icon(Icons.camera_alt, color: Color(0xFF5B9FED)),
                 label: const Text('카메라', style: TextStyle(color: Color(0xFF5B9FED))),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0),
               ),
               ElevatedButton.icon(
                 onPressed: () => _pickImage(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library, color: Color(0xFF5B9FED)),
                 label: const Text('갤러리', style: TextStyle(color: Color(0xFF5B9FED))),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  elevation: 0,
-                ),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.white, elevation: 0),
               ),
             ],
           ),
@@ -285,6 +244,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  // (이 아래의 _buildProgressInfoCard, _buildInfoCard, _buildPeriodButton 함수는
+  // 2:13 PM에 드린 코드와 동일하므로, 기존 코드를 그대로 두시면 됩니다.)
+
+  // 10. 정보 + 막대 그래프 위젯 (칼로리, 현재 목표)
   Widget _buildProgressInfoCard({
     required String title,
     required String value,
@@ -293,6 +256,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     required Color iconColor,
     required double progress,
   }) {
+    // ... (2:13 PM 코드와 동일) ...
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -361,6 +325,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  // 11. 정보만 표시하는 위젯 (운동)
   Widget _buildInfoCard({
     required String title,
     required String value,
@@ -368,6 +333,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     required IconData icon,
     required Color iconColor,
   }) {
+    // ... (2:13 PM 코드와 동일) ...
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -421,7 +387,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  // 12. 기간 선택 버튼 위젯
   Widget _buildPeriodButton(String period, bool isSelected) {
+    // ... (2:13 PM 코드와 동일) ...
     return GestureDetector(
       onTap: () {
         setState(() {

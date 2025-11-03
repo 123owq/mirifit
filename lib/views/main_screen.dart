@@ -16,7 +16,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  File? _imageForGenerate;
+  String? _imagePathForGenerate;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class _MainScreenState extends State<MainScreen> {
           if (result != null && result is Map && result['destination'] == 'generate') {
             setState(() {
               _currentIndex = 2;
-              _imageForGenerate = File(result['path']);
+              _imagePathForGenerate = result['path'] as String?;
             });
           }
         },
@@ -84,8 +84,13 @@ class _MainScreenState extends State<MainScreen> {
         return const ProgressScreen();
       case 2:
         return GenerateScreen(
-          initialImage: _imageForGenerate,
-
+          initialImagePath: _imagePathForGenerate,
+          // ★ 4. GenerateScreen에서 이미지를 지우면 MainScreen도 잊도록 함
+          onClearImage: () {
+            setState(() {
+              _imagePathForGenerate = null;
+            });
+          },
         );
       case 3:
         return const ProfileScreen();

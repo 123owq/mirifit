@@ -72,7 +72,7 @@ class MirifitApp extends StatelessWidget {
         '/full_screen_image': (context) => const FullScreenImageScreen(),
 
         // README에 있던 파트
-        '/generate': (context) => const GenerateScreen(),
+
         '/loading': (context) => const LoadingScreen(),
         '/result': (context) => const ResultScreen(),
 

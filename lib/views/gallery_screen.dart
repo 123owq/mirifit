@@ -23,10 +23,9 @@ class _GalleryScreenState extends State<GalleryScreen> {
   final List<String> demoImages = const [
     'assets/demo_images/1.jpg',
     'assets/demo_images/2.jpg',
-    'assets:demo_images/3.jpg',
     'assets/demo_images/4.jpg',
     'assets/demo_images/5.jpg',
-    'assets/demo_images/6.jpg'
+    'assets/demo_images/6.jpg',
     'assets/demo_images/before.png'
   ];
 
@@ -100,18 +99,13 @@ class _GalleryScreenState extends State<GalleryScreen> {
           // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
           if (index == 0) {
             return GestureDetector(
-              onTap: () async { // 1. async 추가
-                // 2. CameraScreen으로 이동하고, 사진 경로(imagePath)를 기다림
+              onTap: () async {
                 final imagePath = await Navigator.pushNamed(context, '/camera');
-
-                // 3. 사진을 성공적으로 찍었다면 (null이 아니라면)
                 if (imagePath != null && imagePath is String) {
-
-                  // 4. GalleryScreen을 닫고, MainScreen으로 "명령"을 전달
                   if (mounted) {
                     Navigator.pop(context, {
-                      'destination': 'generate', // "Generate 탭으로 가라"
-                      'path': imagePath,       // "이 사진을 가지고"
+                      'destination': 'generate',
+                      'path': imagePath, // 카메라에서 찍은 'File' 경로
                     });
                   }
                 }
@@ -125,19 +119,40 @@ class _GalleryScreenState extends State<GalleryScreen> {
 
           // Web demo 이미지
           if (kIsWeb) {
-            return Image.asset(
-              demoImages[index - 1],
-              fit: BoxFit.cover,
+            final String assetPath = demoImages[index - 1]; // 예: 'assets/demo_images/1.jpg'
+
+            return GestureDetector(
+              onTap: () {
+                // ★ 갤러리 이미지를 탭하면, MainScreen으로 '명령'을 보냄
+                Navigator.pop(context, {
+                  'destination': 'generate',
+                  'path': assetPath, // 'assets/'로 시작하는 'Asset' 경로
+                });
+              },
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.cover,
+              ),
             );
           }
-
+          final assetEntity = _images[index - 1];
           // Android 실제 갤러리 이미지
           return FutureBuilder<File?>(
-            future: _images[index - 1].file,
+            future: assetEntity.file,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.done &&
                   snapshot.data != null) {
-                return Image.file(snapshot.data!, fit: BoxFit.cover);
+
+                return GestureDetector(
+                  onTap: () {
+                    // ★ 실제 갤러리 이미지를 탭해도 '명령'을 보냄
+                    Navigator.pop(context, {
+                      'destination': 'generate',
+                      'path': snapshot.data!.path, // 'File' 경로
+                    });
+                  },
+                  child: Image.file(snapshot.data!, fit: BoxFit.cover),
+                );
               }
               return Container(color: Colors.grey[200]);
             },
