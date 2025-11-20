@@ -1,0 +1,1 @@
+enum AppMode { simple, precise }
