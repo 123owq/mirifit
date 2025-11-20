@@ -93,10 +93,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
       status = await Permission.storage.request();
     }
 
-    if (!status.isGranted) {
-      _showSnackBar('이미지 저장을 위해 저장소 권한이 필요합니다.', Colors.red);
-      return;
-    }
+    // if (!status.isGranted) {
+    //   _showSnackBar('이미지 저장을 위해 저장소 권한이 필요합니다.', Colors.red);
+    //   return;
+    // }
 
     setState(() {
       _isLoading = true;
