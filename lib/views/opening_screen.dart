@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mirifit/models/fitness_data.dart';
 import 'main_screen.dart';
 import '../models/app_mode.dart';
 
@@ -13,6 +14,7 @@ class _OpeningScreenState extends State<OpeningScreen> {
   final PageController _pageController = PageController();
   final TextEditingController _heightController = TextEditingController();
   final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _ageController = TextEditingController();
 
   // 상태 변수들
   int _currentPage = 0; // 0: 첫번째 페이지, 1: 두번째 페이지
@@ -24,11 +26,13 @@ class _OpeningScreenState extends State<OpeningScreen> {
     _pageController.dispose();
     _heightController.dispose();
     _weightController.dispose();
+    _ageController.dispose();
     super.dispose();
   }
 
   // 다음 페이지로 이동
   void _nextPage() {
+    // TODO: 입력값 검증 추가
     _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
@@ -37,16 +41,24 @@ class _OpeningScreenState extends State<OpeningScreen> {
 
   // 앱 시작하기 (홈 화면으로 이동)
   void _startApp() {
-    // ★ 여기서 선택된 모드(_selectedMode)를 홈 화면이나 라우터로 넘겨줍니다.
-    print(
-      "선택된 정보: 키=${_heightController.text}, 체중=${_weightController.text}, 성별=$_selectedGender, 모드=$_selectedMode",
+    final double height = double.tryParse(_heightController.text) ?? 0;
+    final double currentWeight = double.tryParse(_weightController.text) ?? 0;
+    final int age = int.tryParse(_ageController.text) ?? 0;
+
+    final fitnessData = FitnessData(
+      height: height,
+      currentWeight: currentWeight,
+      age: age,
+      gender: _selectedGender,
     );
 
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        // mode 전달
-        builder: (context) => MainScreen(mode: _selectedMode),
+        builder: (context) => MainScreen(
+          mode: _selectedMode,
+          fitnessData: fitnessData,
+        ),
       ),
     );
   }
@@ -77,7 +89,7 @@ class _OpeningScreenState extends State<OpeningScreen> {
                     });
                   },
                   children: [
-                    _buildStep1Form(), // 1페이지: 키/체중
+                    _buildStep1Form(), // 1페이지: 키/체중/나이
                     _buildStep2Form(), // 2페이지: 성별/모드
                   ],
                 ),
@@ -169,18 +181,21 @@ class _OpeningScreenState extends State<OpeningScreen> {
     );
   }
 
-  // 페이지 1: 키/체중 입력
+  // 페이지 1: 키/체중/나이 입력
   Widget _buildStep1Form() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInputLabel("키"),
-          _buildTextField(controller: _heightController, hint: "키를 입력하세요"),
-          const SizedBox(height: 30),
+          _buildTextField(controller: _heightController, hint: "키(cm)를 입력하세요"),
+          const SizedBox(height: 24),
           _buildInputLabel("체중"),
-          _buildTextField(controller: _weightController, hint: "체중을 입력하세요"),
+          _buildTextField(controller: _weightController, hint: "체중(kg)을 입력하세요"),
+          const SizedBox(height: 24),
+          _buildInputLabel("나이"),
+          _buildTextField(controller: _ageController, hint: "나이를 입력하세요"),
         ],
       ),
     );

@@ -5,18 +5,20 @@ import 'package:permission_handler/permission_handler.dart';
 import '../models/fitness_data.dart';
 import '../models/app_mode.dart';
 import '../services/api_service.dart';
+import 'result_screen.dart'; // ResultScreen import
 
 class GenerateScreen extends StatefulWidget {
   final AppMode mode;
-  // 1. MainScreen에서 이미지를 전달받기 위한 파라미터
+  final FitnessData fitnessData; // FitnessData 전달 받기
   final String? initialImagePath;
-  final VoidCallback onClearImage; // 이미지를 지우기 위한 콜백
+  final VoidCallback onClearImage;
 
   const GenerateScreen({
     super.key,
     required this.mode,
+    required this.fitnessData, // 생성자에 추가
     this.initialImagePath,
-    required this.onClearImage, // MainScreen에서 받아옴
+    required this.onClearImage,
   });
 
   @override
@@ -24,26 +26,23 @@ class GenerateScreen extends StatefulWidget {
 }
 
 class _GenerateScreenState extends State<GenerateScreen> {
-  // 2. GenerateScreen이 자체적으로 관리하는 이미지 경로 변수
   String? _selectedImagePath;
   late FitnessData _fitnessData;
-  final ImagePicker _picker = ImagePicker(); // 갤러리 접근용
-  final ApiService _apiService = ApiService(); // ApiService 인스턴스 생성
+  final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
 
   int _selectedCalorieLevel = 1;
   int _selectedExerciseLevel = 1;
-  bool _isLoading = false; // 로딩 상태 변수 추가
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fitnessData = FitnessData();
-    // 3. 위젯이 처음 생성될 때, MainScreen에서 받은 이미지 경로로 초기화
+    // 전달받은 fitnessData로 상태 초기화
+    _fitnessData = widget.fitnessData;
     _selectedImagePath = widget.initialImagePath;
   }
 
-  // 4. (중요) MainScreen의 상태가 바뀌어 GenerateScreen이 다시 빌드될 때
-  // (예: Home -> Generate 탭 이동 시) 새로운 initialImagePath를 반영
   @override
   void didUpdateWidget(covariant GenerateScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -52,9 +51,14 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _selectedImagePath = widget.initialImagePath;
       });
     }
+    // 부모 위젯에서 fitnessData가 변경될 경우를 대비해 업데이트
+    if (widget.fitnessData != oldWidget.fitnessData) {
+      setState(() {
+        _fitnessData = widget.fitnessData;
+      });
+    }
   }
 
-  // 5. 카메라 또는 갤러리에서 이미지를 가져오는 내부 함수
   Future<void> _pickImage(ImageSource source) async {
     String? imagePath;
 
@@ -72,20 +76,17 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
     if (imagePath != null) {
       setState(() {
-        // ★★★ imagePath(String)를 _selectedImagePath(String?)에 바로 저장 ★★★
         _selectedImagePath = imagePath;
       });
     }
   }
 
-  // ★ 이미지 생성 및 API 호출 로직 ★
   Future<void> _generateImage() async {
     if (_selectedImagePath == null) {
       _showSnackBar('이미지를 먼저 선택해주세요.', Colors.red);
       return;
     }
 
-    // 권한 요청
     PermissionStatus status;
     if (Theme.of(context).platform == TargetPlatform.iOS) {
       status = await Permission.photos.request();
@@ -105,17 +106,16 @@ class _GenerateScreenState extends State<GenerateScreen> {
     try {
       final imageFile = File(_selectedImagePath!);
 
-      // TODO: 성별, 키, 나이, 현재 체중, 일일 소모 칼로리, 복부 사이즈 등은 UI에서 입력받아야 합니다.
-      //       현재는 임시값을 사용합니다.
-      final String sex = 'male'; // 임시값
-      final double height = 170.0; // 임시값
-      final int age = 25; // 임시값
-      // FitnessData의 currentWeight를 사용하지만, 값이 없으면 임시값 60.0 사용
-      final double currentWeight = _fitnessData.weightGoal > 0 ? (_fitnessData.weightGoal + _fitnessData.weightRemaining) : 60.0;
+      // 전달받은 fitnessData 사용
+      final String sex = _fitnessData.gender == '남성' ? 'male' : 'female';
+      final double height = _fitnessData.height;
+      final int age = _fitnessData.age;
+      final double currentWeight = _fitnessData.currentWeight;
+      
+      // TODO: 아래 값들은 추후 UI를 통해 입력받거나 계산해야 합니다.
       final int dailyCaloriesBurned = 500; // 임시값
-      // FitnessData의 caloriesGoal을 사용하지만, 값이 없으면 임시값 2000 사용
       final int dailyCaloriesIntake = _fitnessData.caloriesGoal > 0 ? _fitnessData.caloriesGoal.toInt() : 2000;
-      final double bellySize = 0.0; // 임시값 (백엔드 파라미터가 0.0으로 고정된 경우)
+      final double bellySize = 0.0; // 임시값
 
       // 기간 선택 (예: '6개월' -> 180일)
       int days = 90; // 기본값
@@ -128,7 +128,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       } else if (_fitnessData.selectedPeriod == '24개월') {
         days = 730;
       }
-      
+
       final response = await _apiService.transformImage(
         imageFile: imageFile,
         sex: sex,
@@ -143,10 +143,12 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
       // 성공 시 result_screen으로 이동
       if (mounted) {
-        Navigator.pushReplacementNamed(
+        // ResultScreen으로 직접 이동하고 데이터를 전달합니다.
+        Navigator.push(
           context,
-          '/result',
-          arguments: response, // API 응답 전체를 전달
+          MaterialPageRoute(
+            builder: (context) => ResultScreen(resultData: response),
+          ),
         );
       }
     } catch (e) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mirifit/models/fitness_data.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/calendar.dart';
 import 'profile_screen.dart';
@@ -9,7 +10,8 @@ import '../models/app_mode.dart';
 
 class MainScreen extends StatefulWidget {
   final AppMode mode;
-  const MainScreen({super.key, required this.mode});
+  final FitnessData fitnessData;
+  const MainScreen({super.key, required this.mode, required this.fitnessData});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -87,6 +89,7 @@ class _MainScreenState extends State<MainScreen> {
       case 2:
         return GenerateScreen(
           mode: widget.mode,
+          fitnessData: widget.fitnessData,
           initialImagePath: _imagePathForGenerate,
           // ★ 4. GenerateScreen에서 이미지를 지우면 MainScreen도 잊도록 함
           onClearImage: () {

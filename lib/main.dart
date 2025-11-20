@@ -75,7 +75,6 @@ class MirifitApp extends StatelessWidget {
 
         // README에 있던 파트
         '/loading': (context) => const LoadingScreen(),
-        '/result': (context) => const ResultScreen(),
 
         '/gallery': (context) => const GalleryScreen(),
         '/camera': (context) => const CameraScreen(),
