@@ -19,6 +19,14 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   String? _imagePathForGenerate;
 
+  late AppMode _currentMode;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentMode = widget.mode;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,7 +94,7 @@ class _MainScreenState extends State<MainScreen> {
         return const ProgressScreen();
       case 2:
         return GenerateScreen(
-          mode: widget.mode,
+          mode: _currentMode,
           initialImagePath: _imagePathForGenerate,
           // ★ 4. GenerateScreen에서 이미지를 지우면 MainScreen도 잊도록 함
           onClearImage: () {
@@ -96,7 +104,15 @@ class _MainScreenState extends State<MainScreen> {
           },
         );
       case 3:
-        return const ProfileScreen();
+        return ProfileScreen(
+          currentMode: _currentMode,
+          onModeChanged: (newMode) {
+            setState(() {
+              _currentMode = newMode;
+            });
+            print("모드가 변경되었습니다: $_currentMode");
+          },
+        );
       default:
         return const Center(child: Text('Home 화면'));
     }

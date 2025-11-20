@@ -20,7 +20,6 @@ class _SplashScreenState extends State<SplashScreen> {
     // 2. '/home' 경로(MainScreen)로 이동
     // pushReplacementNamed: 현재 화면(Splash)을 파괴하고 새 화면으로 이동
     // (뒤로가기 버튼을 눌러도 스플래시 화면으로 돌아오지 않게 함)
-    //Navigator.pushReplacementNamed(context, '/home');
     Navigator.pushReplacementNamed(context, '/opening');
   }
 

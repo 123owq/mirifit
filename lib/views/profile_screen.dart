@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import '../models/app_mode.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  final AppMode currentMode;
+  final Function(AppMode) onModeChanged;
+  const ProfileScreen({
+    super.key,
+    required this.currentMode,
+    required this.onModeChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
     // Scaffold가 화면의 기본 구조를 잡아줍니다.
     return Scaffold(
       backgroundColor: Colors.grey[100], // 홈 화면과 동일한 배경색
-
       // 1. 앱바 (AppBar)
       appBar: AppBar(
         title: const Text(
@@ -33,17 +39,23 @@ class ProfileScreen extends StatelessWidget {
             _buildSettingsCard(
               children: [
                 _buildSettingsRow(Icons.account_circle, '정보 수정'),
-                _buildSettingsRow(Icons.notifications_none, '알림',
-                    trailing: Switch(
-                      value: true, // (임시) 실제로는 상태 변수 필요
-                      onChanged: (value) {},
-                      activeColor: Colors.blueAccent,
-                    )),
-                _buildSettingsRow(Icons.language, '언어',
-                    trailing: const Text(
-                      '한국어',
-                      style: TextStyle(color: Colors.blueAccent, fontSize: 16),
-                    )),
+                _buildSettingsRow(
+                  Icons.notifications_none,
+                  '알림',
+                  trailing: Switch(
+                    value: true, // (임시) 실제로는 상태 변수 필요
+                    onChanged: (value) {},
+                    activeColor: Colors.blueAccent,
+                  ),
+                ),
+                _buildSettingsRow(
+                  Icons.language,
+                  '언어',
+                  trailing: const Text(
+                    '한국어',
+                    style: TextStyle(color: Colors.blueAccent, fontSize: 16),
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -52,11 +64,38 @@ class ProfileScreen extends StatelessWidget {
             _buildSettingsCard(
               children: [
                 _buildSettingsRow(Icons.devices_other, '연동 기기'),
-                _buildSettingsRow(Icons.light_mode, '모드 전환',
-                    trailing: const Text(
-                      'Light mode',
-                      style: TextStyle(color: Colors.grey, fontSize: 16),
-                    )),
+                _buildSettingsRow(
+                  Icons.light_mode,
+                  '모드 전환',
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min, // Row 크기를 내용물만큼만 잡기
+                    children: [
+                      // 현재 모드 텍스트 표시
+                      Text(
+                        currentMode == AppMode.precise ? '정밀 모드' : '간편 모드',
+                        style: TextStyle(
+                          color: currentMode == AppMode.precise
+                              ? Colors.blueAccent
+                              : Colors.grey,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // 스위치로 모드 변경 (ON=정밀, OFF=간편)
+                      Switch(
+                        value: currentMode == AppMode.precise,
+                        activeColor: Colors.blueAccent,
+                        onChanged: (value) {
+                          // 스위치를 켜면 정밀모드, 끄면 간편모드로 변경 요청
+                          onModeChanged(
+                            value ? AppMode.precise : AppMode.simple,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -86,7 +125,7 @@ class ProfileScreen extends StatelessWidget {
             CircleAvatar(
               radius: 60, // ★ radius(반지름) 60 = 지름(가로세로) 120
               backgroundImage: const AssetImage(
-                  'assets/images/my_profile_avatar.png'
+                'assets/images/my_profile_avatar.png',
               ),
               // 이미지가 로드되기 전이나 없을 때 배경색
               backgroundColor: Colors.grey[200],
@@ -125,9 +164,7 @@ class ProfileScreen extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        child: Column(
-          children: children,
-        ),
+        child: Column(children: children),
       ),
     );
   }

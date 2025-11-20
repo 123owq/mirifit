@@ -14,6 +14,7 @@ import 'package:mirifit/views/splash_screen.dart';
 import 'package:mirifit/views/loading_screen.dart';
 import 'package:mirifit/views/record_detail_screen.dart';
 import 'package:mirifit/views/goal_by_date_screen.dart';
+import 'package:mirifit/views/profile_screen.dart';
 import 'package:mirifit/views/full_screen_image_screen.dart';
 import 'package:mirifit/models/app_mode.dart';
 
@@ -68,7 +69,7 @@ class MirifitApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/opening': (context) => const OpeningScreen(),
 
-        // '/profile': (context) => const ProfileScreen(), // (나중에 추가)
+        //'/profile': (context) => const ProfileScreen(), // (나중에 추가)
         '/record_detail': (context) => const RecordDetailScreen(),
         '/goal_by_date': (context) => const GoalByDateScreen(),
         '/full_screen_image': (context) => const FullScreenImageScreen(),
