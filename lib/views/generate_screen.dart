@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // 갤러리용
 import 'dart:io'; // File 클래스용
+import 'package:permission_handler/permission_handler.dart';
 import '../models/fitness_data.dart';
 import '../models/app_mode.dart';
+import '../services/api_service.dart';
 
 class GenerateScreen extends StatefulWidget {
   final AppMode mode;
@@ -26,9 +28,11 @@ class _GenerateScreenState extends State<GenerateScreen> {
   String? _selectedImagePath;
   late FitnessData _fitnessData;
   final ImagePicker _picker = ImagePicker(); // 갤러리 접근용
+  final ApiService _apiService = ApiService(); // ApiService 인스턴스 생성
 
   int _selectedCalorieLevel = 1;
   int _selectedExerciseLevel = 1;
+  bool _isLoading = false; // 로딩 상태 변수 추가
 
   @override
   void initState() {
@@ -72,6 +76,97 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _selectedImagePath = imagePath;
       });
     }
+  }
+
+  // ★ 이미지 생성 및 API 호출 로직 ★
+  Future<void> _generateImage() async {
+    if (_selectedImagePath == null) {
+      _showSnackBar('이미지를 먼저 선택해주세요.', Colors.red);
+      return;
+    }
+
+    // 권한 요청
+    PermissionStatus status;
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      status = await Permission.photos.request();
+    } else {
+      status = await Permission.storage.request();
+    }
+
+    if (!status.isGranted) {
+      _showSnackBar('이미지 저장을 위해 저장소 권한이 필요합니다.', Colors.red);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final imageFile = File(_selectedImagePath!);
+
+      // TODO: 성별, 키, 나이, 현재 체중, 일일 소모 칼로리, 복부 사이즈 등은 UI에서 입력받아야 합니다.
+      //       현재는 임시값을 사용합니다.
+      final String sex = 'male'; // 임시값
+      final double height = 170.0; // 임시값
+      final int age = 25; // 임시값
+      // FitnessData의 currentWeight를 사용하지만, 값이 없으면 임시값 60.0 사용
+      final double currentWeight = _fitnessData.weightGoal > 0 ? (_fitnessData.weightGoal + _fitnessData.weightRemaining) : 60.0;
+      final int dailyCaloriesBurned = 500; // 임시값
+      // FitnessData의 caloriesGoal을 사용하지만, 값이 없으면 임시값 2000 사용
+      final int dailyCaloriesIntake = _fitnessData.caloriesGoal > 0 ? _fitnessData.caloriesGoal.toInt() : 2000;
+      final double bellySize = 0.0; // 임시값 (백엔드 파라미터가 0.0으로 고정된 경우)
+
+      // 기간 선택 (예: '6개월' -> 180일)
+      int days = 90; // 기본값
+      if (_fitnessData.selectedPeriod == '6개월') {
+        days = 180;
+      } else if (_fitnessData.selectedPeriod == '12개월') {
+        days = 365;
+      } else if (_fitnessData.selectedPeriod == '18개월') {
+        days = 547;
+      } else if (_fitnessData.selectedPeriod == '24개월') {
+        days = 730;
+      }
+      
+      final response = await _apiService.transformImage(
+        imageFile: imageFile,
+        sex: sex,
+        height: height,
+        currentWeight: currentWeight,
+        age: age,
+        dailyCaloriesBurned: dailyCaloriesBurned,
+        dailyCaloriesIntake: dailyCaloriesIntake,
+        days: days,
+        bellySize: bellySize,
+      );
+
+      // 성공 시 result_screen으로 이동
+      if (mounted) {
+        Navigator.pushReplacementNamed(
+          context,
+          '/result',
+          arguments: response, // API 응답 전체를 전달
+        );
+      }
+    } catch (e) {
+      _showSnackBar('이미지 생성 실패: ${e.toString()}', Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+      ),
+    );
   }
 
   @override
@@ -168,42 +263,31 @@ class _GenerateScreenState extends State<GenerateScreen> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/loading',
-                    arguments: {
-                      'calories': _fitnessData.calories,
-                      'weightGoal': _fitnessData.weightGoal,
-                      'period': _fitnessData.selectedPeriod,
-                      'imagePath':
-                          _selectedImagePath, // ★ Generate 탭의 현재 이미지 경로
-                    },
-                  );
-                },
+                onPressed: _isLoading ? null : _generateImage, // 로딩 중에는 버튼 비활성화
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B9FED),
                   shape: RoundedRectangleBorder(
-                    // (오타 수정됨)
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 0,
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      '이미지 생성',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white) // 로딩 인디케이터
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            '이미지 생성',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
             const SizedBox(height: 24),

@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; // kIsWeb
-import 'dart:io'; // File
+import 'dart:convert'; // for base64Decode
+import 'dart:typed_data'; // for Uint8List
 
 class ResultScreen extends StatelessWidget {
   const ResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // arguments에서 imagePath 또는 File 가져오기
-    final args = ModalRoute.of(context)?.settings.arguments;
-    File? imageFile;
+    // 1. GenerateScreen에서 전달받은 전체 API 응답
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
 
-    if (args is Map<String, dynamic>) {
-      final imageArg = args['imagePath'];
-      if (imageArg is String) {
-        imageFile = File(imageArg);
-      } else if (imageArg is File) {
-        imageFile = imageArg;
+    // 2. 응답에서 base64 이미지 문자열 추출
+    Uint8List? decodedBytes;
+    if (args != null &&
+        args.containsKey('images') &&
+        args['images'] is Map &&
+        (args['images'] as Map).containsKey('transformed')) {
+      final String base64String = args['images']['transformed'];
+      try {
+        decodedBytes = base64Decode(base64String);
+      } catch (e) {
+        print('Error decoding base64 string: $e');
+        // 디코딩 실패 시 decodedBytes는 null로 유지됩니다.
       }
     }
 
@@ -52,7 +58,8 @@ class ResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   child: AspectRatio(
                     aspectRatio: 9 / 16,
-                    child: _buildImageWidget(imageFile),
+                    // 3. 디코딩된 이미지 바이트를 위젯으로 전달
+                    child: _buildImageWidget(decodedBytes),
                   ),
                 ),
               ),
@@ -185,19 +192,17 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  // Web/Android 공용 이미지 처리
-  Widget _buildImageWidget(File? imageFile) {
-    if (kIsWeb) {
-      return Image.asset(
-        'assets/images/after.png',
-        fit: BoxFit.cover,
-      );
-    } else if (imageFile != null) {
-      return Image.file(
-        imageFile,
+  // 4. File 대신 Uint8List를 받는 위젯으로 수정
+  Widget _buildImageWidget(Uint8List? imageBytes) {
+    // kIsWeb은 이제 의미가 없으므로 제거 가능
+    if (imageBytes != null) {
+      // 5. 메모리에서 이미지 표시
+      return Image.memory(
+        imageBytes,
         fit: BoxFit.cover,
       );
     } else {
+      // 6. 이미지 데이터가 없거나 디코딩 실패 시 기본 이미지 표시
       return Image.asset(
         'assets/images/after.png',
         fit: BoxFit.cover,
