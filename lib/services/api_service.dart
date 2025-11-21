@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String _baseUrl = "http://10.163.211.204:8000";
+  static const String _baseUrl = "https://mirifit.shop";
 
 
   /// 이미지와 사용자 데이터를 서버로 전송하여 이미지 변환을 요청합니다.
