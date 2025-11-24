@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mirifit/models/fitness_data.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/calendar.dart';
 import 'profile_screen.dart';
@@ -9,7 +10,8 @@ import '../models/app_mode.dart';
 
 class MainScreen extends StatefulWidget {
   final AppMode mode;
-  const MainScreen({super.key, required this.mode});
+  final FitnessData fitnessData;
+  const MainScreen({super.key, required this.mode, required this.fitnessData});
 
   @override
   State<MainScreen> createState() => _MainScreenState();

@@ -1,22 +1,30 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // kIsWeb
-import 'dart:io'; // File
+import 'dart:convert'; // for base64Decode
+import 'dart:typed_data'; // for Uint8List
 
 class ResultScreen extends StatelessWidget {
-  const ResultScreen({super.key});
+  // 1. 생성자를 통해 직접 API 응답을 받도록 수정
+  final Map<String, dynamic> resultData;
+
+  const ResultScreen({super.key, required this.resultData});
 
   @override
   Widget build(BuildContext context) {
-    // arguments에서 imagePath 또는 File 가져오기
-    final args = ModalRoute.of(context)?.settings.arguments;
-    File? imageFile;
+    // 2. ModalRoute 대신 생성자로 받은 resultData 사용
+    final Map<String, dynamic>? args = resultData;
 
-    if (args is Map<String, dynamic>) {
-      final imageArg = args['imagePath'];
-      if (imageArg is String) {
-        imageFile = File(imageArg);
-      } else if (imageArg is File) {
-        imageFile = imageArg;
+    // 3. 응답에서 base64 이미지 문자열 추출
+    Uint8List? decodedBytes;
+    if (args != null &&
+        args.containsKey('images') &&
+        args['images'] is Map &&
+        (args['images'] as Map).containsKey('transformed')) {
+      final String base64String = args['images']['transformed'];
+      try {
+        decodedBytes = base64Decode(base64String);
+      } catch (e) {
+        print('Error decoding base64 string: $e');
+        // 디코딩 실패 시 decodedBytes는 null로 유지됩니다.
       }
     }
 
@@ -33,6 +41,10 @@ class ResultScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -52,7 +64,8 @@ class ResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   child: AspectRatio(
                     aspectRatio: 9 / 16,
-                    child: _buildImageWidget(imageFile),
+                    // 4. 디코딩된 이미지 바이트를 위젯으로 전달
+                    child: _buildImageWidget(decodedBytes),
                   ),
                 ),
               ),
@@ -113,6 +126,7 @@ class ResultScreen extends StatelessWidget {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: () {
+                    // 이전 화면 (GenerateScreen)으로 돌아감
                     Navigator.pop(context);
                   },
                   style: ElevatedButton.styleFrom(
@@ -185,21 +199,17 @@ class ResultScreen extends StatelessWidget {
     );
   }
 
-  // Web/Android 공용 이미지 처리
-  Widget _buildImageWidget(File? imageFile) {
-    if (kIsWeb) {
-      return Image.asset(
-        'assets/images/after.png',
-        fit: BoxFit.cover,
-      );
-    } else if (imageFile != null) {
-      return Image.file(
-        imageFile,
+  // 5. Uint8List를 받는 위젯 (변경 없음)
+  Widget _buildImageWidget(Uint8List? imageBytes) {
+    if (imageBytes != null && imageBytes.isNotEmpty) {
+      return Image.memory(
+        imageBytes,
         fit: BoxFit.cover,
       );
     } else {
+      // 이미지가 없거나 디코딩 실패 시
       return Image.asset(
-        'assets/images/after.png',
+        'assets/images/after.png', // 기본 플레이스홀더 이미지
         fit: BoxFit.cover,
       );
     }

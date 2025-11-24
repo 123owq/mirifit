@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // 갤러리용
 import 'dart:io'; // File 클래스용
+import 'package:permission_handler/permission_handler.dart';
 import '../models/fitness_data.dart';
 import '../models/app_mode.dart';
+import '../services/api_service.dart';
+import 'result_screen.dart'; // ResultScreen import
 
 class GenerateScreen extends StatefulWidget {
   final AppMode mode;
-  // 1. MainScreen에서 이미지를 전달받기 위한 파라미터
+  final FitnessData fitnessData; // FitnessData 전달 받기
   final String? initialImagePath;
-  final VoidCallback onClearImage; // 이미지를 지우기 위한 콜백
+  final VoidCallback onClearImage;
 
   const GenerateScreen({
     super.key,
     required this.mode,
+    required this.fitnessData, // 생성자에 추가
     this.initialImagePath,
-    required this.onClearImage, // MainScreen에서 받아옴
+    required this.onClearImage,
   });
 
   @override
@@ -22,24 +26,23 @@ class GenerateScreen extends StatefulWidget {
 }
 
 class _GenerateScreenState extends State<GenerateScreen> {
-  // 2. GenerateScreen이 자체적으로 관리하는 이미지 경로 변수
   String? _selectedImagePath;
   late FitnessData _fitnessData;
-  final ImagePicker _picker = ImagePicker(); // 갤러리 접근용
+  final ImagePicker _picker = ImagePicker();
+  final ApiService _apiService = ApiService();
 
   int _selectedCalorieLevel = 1;
   int _selectedExerciseLevel = 1;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _fitnessData = FitnessData();
-    // 3. 위젯이 처음 생성될 때, MainScreen에서 받은 이미지 경로로 초기화
+    // 전달받은 fitnessData로 상태 초기화
+    _fitnessData = widget.fitnessData;
     _selectedImagePath = widget.initialImagePath;
   }
 
-  // 4. (중요) MainScreen의 상태가 바뀌어 GenerateScreen이 다시 빌드될 때
-  // (예: Home -> Generate 탭 이동 시) 새로운 initialImagePath를 반영
   @override
   void didUpdateWidget(covariant GenerateScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -48,9 +51,14 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _selectedImagePath = widget.initialImagePath;
       });
     }
+    // 부모 위젯에서 fitnessData가 변경될 경우를 대비해 업데이트
+    if (widget.fitnessData != oldWidget.fitnessData) {
+      setState(() {
+        _fitnessData = widget.fitnessData;
+      });
+    }
   }
 
-  // 5. 카메라 또는 갤러리에서 이미지를 가져오는 내부 함수
   Future<void> _pickImage(ImageSource source) async {
     String? imagePath;
 
@@ -68,10 +76,99 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
     if (imagePath != null) {
       setState(() {
-        // ★★★ imagePath(String)를 _selectedImagePath(String?)에 바로 저장 ★★★
         _selectedImagePath = imagePath;
       });
     }
+  }
+
+  Future<void> _generateImage() async {
+    if (_selectedImagePath == null) {
+      _showSnackBar('이미지를 먼저 선택해주세요.', Colors.red);
+      return;
+    }
+
+    PermissionStatus status;
+    if (Theme.of(context).platform == TargetPlatform.iOS) {
+      status = await Permission.photos.request();
+    } else {
+      status = await Permission.storage.request();
+    }
+
+    // if (!status.isGranted) {
+    //   _showSnackBar('이미지 저장을 위해 저장소 권한이 필요합니다.', Colors.red);
+    //   return;
+    // }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final imageFile = File(_selectedImagePath!);
+
+      // 전달받은 fitnessData 사용
+      final String sex = _fitnessData.gender == '남성' ? 'male' : 'female';
+      final double height = _fitnessData.height;
+      final int age = _fitnessData.age;
+      final double currentWeight = _fitnessData.currentWeight;
+      
+      // TODO: 아래 값들은 추후 UI를 통해 입력받거나 계산해야 합니다.
+      final int dailyCaloriesBurned = 500; // 임시값
+      final int dailyCaloriesIntake = _fitnessData.caloriesGoal > 0 ? _fitnessData.caloriesGoal.toInt() : 2000;
+      final double bellySize = 0.0; // 임시값
+
+      // 기간 선택 (예: '6개월' -> 180일)
+      int days = 90; // 기본값
+      if (_fitnessData.selectedPeriod == '6개월') {
+        days = 180;
+      } else if (_fitnessData.selectedPeriod == '12개월') {
+        days = 365;
+      } else if (_fitnessData.selectedPeriod == '18개월') {
+        days = 547;
+      } else if (_fitnessData.selectedPeriod == '24개월') {
+        days = 730;
+      }
+
+      final response = await _apiService.transformImage(
+        imageFile: imageFile,
+        sex: sex,
+        height: height,
+        currentWeight: currentWeight,
+        age: age,
+        dailyCaloriesBurned: dailyCaloriesBurned,
+        dailyCaloriesIntake: dailyCaloriesIntake,
+        days: days,
+        bellySize: bellySize,
+      );
+
+      // 성공 시 result_screen으로 이동
+      if (mounted) {
+        // ResultScreen으로 직접 이동하고 데이터를 전달합니다.
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ResultScreen(resultData: response),
+          ),
+        );
+      }
+    } catch (e) {
+      _showSnackBar('이미지 생성 실패: ${e.toString()}', Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+      ),
+    );
   }
 
   @override
@@ -168,42 +265,31 @@ class _GenerateScreenState extends State<GenerateScreen> {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pushNamed(
-                    context,
-                    '/loading',
-                    arguments: {
-                      'calories': _fitnessData.calories,
-                      'weightGoal': _fitnessData.weightGoal,
-                      'period': _fitnessData.selectedPeriod,
-                      'imagePath':
-                          _selectedImagePath, // ★ Generate 탭의 현재 이미지 경로
-                    },
-                  );
-                },
+                onPressed: _isLoading ? null : _generateImage, // 로딩 중에는 버튼 비활성화
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF5B9FED),
                   shape: RoundedRectangleBorder(
-                    // (오타 수정됨)
                     borderRadius: BorderRadius.circular(16),
                   ),
                   elevation: 0,
                 ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      '이미지 생성',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white) // 로딩 인디케이터
+                    : const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            '이미지 생성',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
               ),
             ),
             const SizedBox(height: 24),
