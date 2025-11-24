@@ -96,7 +96,8 @@ class _MainScreenState extends State<MainScreen> {
         return const ProgressScreen();
       case 2:
         return GenerateScreen(
-          mode: _currentMode,
+          mode: _currentMode, //mode: widget.mode,
+          fitnessData: widget.fitnessData,
           initialImagePath: _imagePathForGenerate,
           // ★ 4. GenerateScreen에서 이미지를 지우면 MainScreen도 잊도록 함
           onClearImage: () {
