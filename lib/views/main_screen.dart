@@ -6,12 +6,11 @@ import 'profile_screen.dart';
 import 'progress_screen.dart';
 import 'generate_screen.dart';
 import 'dart:io';
-import '../models/app_mode.dart';
+
 
 class MainScreen extends StatefulWidget {
-  final AppMode mode;
   final FitnessData fitnessData;
-  const MainScreen({super.key, required this.mode, required this.fitnessData});
+  const MainScreen({super.key, required this.fitnessData});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -20,14 +19,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   String? _imagePathForGenerate;
-
-  late AppMode _currentMode;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentMode = widget.mode;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -95,8 +86,7 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return const ProgressScreen();
       case 2:
-        return GenerateScreen(
-          mode: _currentMode, //mode: widget.mode,
+        return GenerateScreen( 
           fitnessData: widget.fitnessData,
           initialImagePath: _imagePathForGenerate,
           // ★ 4. GenerateScreen에서 이미지를 지우면 MainScreen도 잊도록 함
@@ -107,15 +97,7 @@ class _MainScreenState extends State<MainScreen> {
           },
         );
       case 3:
-        return ProfileScreen(
-          currentMode: _currentMode,
-          onModeChanged: (newMode) {
-            setState(() {
-              _currentMode = newMode;
-            });
-            print("모드가 변경되었습니다: $_currentMode");
-          },
-        );
+        return ProfileScreen();
       default:
         return const Center(child: Text('Home 화면'));
     }
