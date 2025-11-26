@@ -67,4 +67,48 @@ class ApiService {
       throw Exception('Failed to connect to the server: $e');
     }
   }
+
+  Future<Map<String, dynamic>> getFutureImage({
+    required double targetWeight,
+    required File imageFile,
+    required String sex,
+    required double height,
+    required double currentWeight,
+    required int age,
+  }) async {
+    final url = Uri.parse('$_baseUrl/future');
+    
+    // Multipart 요청 생성
+    var request = http.MultipartRequest('POST', url);
+
+    // 텍스트 필드 추가
+    request.fields['target_weight'] = targetWeight.toString();
+    request.fields['sex'] = sex;
+    request.fields['height'] = height.toString();
+    request.fields['current_weight'] = currentWeight.toString();
+    request.fields['age'] = age.toString();
+
+    // 이미지 파일 추가
+    request.files.add(await http.MultipartFile.fromPath(
+      'image',
+      imageFile.path,
+    ));
+
+    try {
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200) {
+        // UTF-8로 디코딩하여 JSON 파싱
+        final responseBody = utf8.decode(response.bodyBytes);
+        return json.decode(responseBody) as Map<String, dynamic>;
+      } else {
+        // 에러 처리
+        throw Exception('Failed to get future image. Status code: ${response.statusCode}, Body: ${response.body}');
+      }
+    } catch (e) {
+      // 네트워크 에러 등
+      throw Exception('Failed to connect to the server: $e');
+    }
+  }
 }

@@ -10,6 +10,7 @@ class FitnessData {
   double height;
   int age;
   double currentWeight;
+  int daysToGoal;
 
   FitnessData({
     this.calories = 1847,
@@ -23,6 +24,7 @@ class FitnessData {
     this.height = 165,
     this.age = 25,
     this.currentWeight = 60,
+    this.daysToGoal = 0,
   });
 
   // 칼로리 진행률 계산
@@ -44,6 +46,7 @@ class FitnessData {
     double? height,
     int? age,
     double? currentWeight,
+    int? daysToGoal,
   }) {
     return FitnessData(
       calories: calories ?? this.calories,
@@ -57,6 +60,7 @@ class FitnessData {
       height: height ?? this.height,
       age: age ?? this.age,
       currentWeight: currentWeight ?? this.currentWeight,
+      daysToGoal: daysToGoal ?? this.daysToGoal,
     );
   }
 }

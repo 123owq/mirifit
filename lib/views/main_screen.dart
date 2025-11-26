@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:mirifit/models/fitness_data.dart';
+import 'package:mirifit/services/api_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
 import '../widgets/calendar.dart';
 import 'profile_screen.dart';
@@ -7,6 +9,9 @@ import 'progress_screen.dart';
 import 'generate_screen.dart';
 import 'dart:io';
 import '../models/app_mode.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class MainScreen extends StatefulWidget {
   final AppMode mode;
@@ -20,8 +25,13 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   String? _imagePathForGenerate;
-
   late AppMode _currentMode;
+
+  final TextEditingController _targetWeightController = TextEditingController();
+  String? _generatedImagePath;
+  int? _daysToGoal;
+  bool _isLoading = false;
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -30,10 +40,70 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   @override
+  void dispose() {
+    _targetWeightController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleConfirm() async {
+    if (_targetWeightController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('목표 체중을 입력해주세요.')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final targetWeight = double.parse(_targetWeightController.text);
+
+      final byteData = await rootBundle.load('assets/images/fitness_image.jpeg');
+      final buffer = byteData.buffer;
+      final tempDir = await getTemporaryDirectory();
+      final tempPath = '${tempDir.path}/temp_fitness_image.jpeg';
+      final imageFile = await File(tempPath).writeAsBytes(
+          buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
+
+      final response = await _apiService.getFutureImage(
+        targetWeight: targetWeight,
+        imageFile: imageFile,
+        sex: widget.fitnessData.gender == '남성' ? 'male' : 'female',
+        height: widget.fitnessData.height,
+        currentWeight: widget.fitnessData.currentWeight,
+        age: widget.fitnessData.age,
+      );
+
+      final String base64Image = response['image'];
+      final int daysToGoal = response['days_to_goal'];
+      final Uint8List decodedBytes = base64Decode(base64Image);
+      final directory = await getApplicationDocumentsDirectory();
+      final imagePath = '${directory.path}/generated_image.jpeg';
+      final file = File(imagePath);
+      await file.writeAsBytes(decodedBytes);
+
+      setState(() {
+        _generatedImagePath = imagePath;
+        _daysToGoal = daysToGoal;
+        widget.fitnessData.daysToGoal = daysToGoal;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('오류가 발생했습니다: $e')),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: _buildBody(),
-      // 1. FAB (플로팅 액션 버튼) 추가: 홈 화면일 때만 표시 (_currentIndex == 0)
       floatingActionButton: _currentIndex == 0
           ? FloatingActionButton(
               onPressed: () async {
@@ -47,15 +117,13 @@ class _MainScreenState extends State<MainScreen> {
                   });
                 }
               },
-              // 디자인 설정 (이미지에서 본 것처럼 크게, 파란색으로 만듭니다)
               backgroundColor: Colors.blueAccent,
               foregroundColor: Colors.white,
-              shape: const CircleBorder(), // 원형
-              elevation: 8, // 그림자를 더 줘서 튀어나오게 합니다.
+              shape: const CircleBorder(),
+              elevation: 8,
               child: const Icon(Icons.add, size: 30),
             )
-          : null, // 홈 화면이 아닐 때는 FAB을 표시하지 않습니다.
-      // 2. FAB의 위치를 하단 중앙으로 설정
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _currentIndex,
@@ -72,22 +140,16 @@ class _MainScreenState extends State<MainScreen> {
     switch (_currentIndex) {
       case 0:
         return SingleChildScrollView(
-          // 스크롤이 가능하도록
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                // 1. 캘린더 (widgets 폴더에서 가져옴)
                 const CalendarWidget(),
                 const SizedBox(height: 20),
-
-                // 2. 이미지 진행상황 카드
                 _buildProgressCard(),
                 const SizedBox(height: 20),
-
-                // 3. 소모 칼로리 / 총 활동량 카드
                 _buildStatsCard(),
-                const SizedBox(height: 20), // 하단 여백
+                const SizedBox(height: 20),
               ],
             ),
           ),
@@ -96,10 +158,9 @@ class _MainScreenState extends State<MainScreen> {
         return const ProgressScreen();
       case 2:
         return GenerateScreen(
-          mode: _currentMode, //mode: widget.mode,
+          mode: _currentMode,
           fitnessData: widget.fitnessData,
           initialImagePath: _imagePathForGenerate,
-          // ★ 4. GenerateScreen에서 이미지를 지우면 MainScreen도 잊도록 함
           onClearImage: () {
             setState(() {
               _imagePathForGenerate = null;
@@ -121,70 +182,94 @@ class _MainScreenState extends State<MainScreen> {
     }
   }
 
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String hint,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: TextField(
+        controller: controller,
+        keyboardType: TextInputType.number,
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade400),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildProgressCard() {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      clipBehavior: Clip.antiAlias, // 이미지가 카드의 둥근 모서리를 따르도록
+      clipBehavior: Clip.antiAlias,
       elevation: 4,
-      child: Stack(
-        alignment: Alignment.bottomLeft,
-        children: [
-          // 1. 배경 이미지
-          Image.asset(
-            'assets/images/fitness_image.jpeg', // ★ 5. [필수] 이 이미지 파일 추가해야 함
-            height: 460,
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
-          // 2. 파란색 그라데이션
-          Container(
-            height: 460,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.blue.withOpacity(0.95), // 하단 (95% 불투명, 더 진하게)
-                ],
-                stops: const [0.4, 1.0], // 그라데이션이 중간(40%)부터 시작
-              ),
-            ),
-          ),
-          // 3. 텍스트
-          const Padding(
-            padding: EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
               children: [
-                Text(
-                  '나의 진행상황',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w300,
+                Expanded(
+                  child: _buildTextField(
+                    controller: _targetWeightController,
+                    hint: '목표 체중(kg)을 입력하세요',
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  '현재 목표의 30%를 달성했어요',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                const SizedBox(width: 10),
+                ElevatedButton(
+                  onPressed: _handleConfirm,
+                  child: const Text('확인'),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            if (_isLoading)
+              const CircularProgressIndicator()
+            else if (_generatedImagePath != null && _daysToGoal != null)
+              Column(
+                children: [
+                  Image.file(
+                    File(_generatedImagePath!),
+                    height: 300,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '목표 체중까지 약 $_daysToGoal일 소요됩니다.',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Image.asset(
+                'assets/images/fitness_image.jpeg',
+                height: 460,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildStatsCard() {
     return Card(
-      color: const Color(0xFF252525), // 디자인의 어두운 색상
+      color: const Color(0xFF252525),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 4,
       child: Padding(
@@ -192,7 +277,6 @@ class _MainScreenState extends State<MainScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // 1. 소모 칼로리
             Column(
               children: [
                 Text(
@@ -202,7 +286,7 @@ class _MainScreenState extends State<MainScreen> {
                 const SizedBox(height: 8),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic, // '285'와 'kcal' 높이 맞춤
+                  textBaseline: TextBaseline.alphabetic,
                   children: [
                     const Text(
                       '285',
@@ -221,9 +305,7 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ],
             ),
-            // 2. 구분선
             Container(height: 50, width: 1, color: Colors.grey[700]),
-            // 3. 총 활동량
             Column(
               children: [
                 Text(
