@@ -104,23 +104,24 @@ class ProgressScreen extends StatelessWidget {
                     Navigator.pushNamed(
                       context,
                       '/full_screen_image',
-                      arguments: 'User Image', // 이미지 대신 텍스트 전달
+                      arguments: 'assets/images/before.png', // 이미지 대신 텍스트 전달
                     );
                   },
                   child: Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                      color: Colors.grey[300], // 회색 배경
-                      borderRadius: BorderRadius.circular(12), // 둥근 모서리
+                        color: Colors.white, // 여백으로 보일 흰색 배경
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!) // 둥근 모서리
                     ),
-                    child: Center(
-                      child: Text(
-                        'User Image',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 12,
-                        ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.asset(
+                        'assets/images/before.png',
+                        // ★★★ 이미지가 짤리지 않고 공간 안에 모두 들어오도록 설정
+                        fit: BoxFit.contain,
+
                       ),
                     ),
                   ),

@@ -134,33 +134,34 @@ class GoalByDateScreen extends StatelessWidget {
     );
   }
 
+  // GoalByDateScreen 클래스의 _buildFutureImage 함수
+
   Widget _buildFutureImage(BuildContext context) {
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       clipBehavior: Clip.antiAlias,
-      child: Container(
-        height: 350, // (디자인에 맞는 적절한 높이값, 예: 350)
-        width: double.infinity, // 너비 꽉 채우기
-        color: Colors.grey[300], // (디자인의 회색 배경)
-
-        child: GestureDetector(
-          onTap: () {
-            Navigator.pushNamed(
-              context,
-              '/full_screen_image',
-              // 'Generated Future Image' 대신 이미지 경로를 전달
-              arguments: 'assets/images/after.png',
-            );
-          },
-          // Container 대신 Image.asset을 바로 사용
+      // ★★★ 바로 GestureDetector를 Card의 child로 가져옵니다 ★★★
+      child: GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(
+            context,
+            '/full_screen_image',
+            arguments: 'assets/images/after.png',
+          );
+        },
+        // ★★★ AspectRatio로 Image.asset을 감싸고 height 속성을 제거합니다 ★★★
+        child: AspectRatio(
+          // 이미지의 일반적인 비율을 지정합니다. (예: 4:3, 16:9, 1:1 등)
+          // 이 이미지의 비율을 확인하시고, 만약 다른 비율이면 여기에 맞춰 수정하세요.
+          // 현재 이미지처럼 세로로 조금 더 길면 3/4나 9/16 같은 비율이 적절할 수 있습니다.
+          aspectRatio: 3 / 4, // 예시: 너비 3 대 높이 4 비율
           child: Image.asset(
-            'assets/images/after.png', // 1. after.png 이미지를 불러옵니다.
-            height: 350, // 2. (높이는 이전처럼 350으로 고정)
+            'assets/images/after.png',
+            // height 속성을 제거하여 AspectRatio가 높이를 결정하게 합니다.
             width: double.infinity,
-            fit: BoxFit.cover, // 3. 이미지가 꽉 차도록 설정
+            fit: BoxFit.cover, // AspectRatio 공간을 꽉 채우면서 비율 유지
           ),
-
         ),
       ),
     );

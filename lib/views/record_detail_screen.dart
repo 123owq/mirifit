@@ -103,31 +103,48 @@ class _RecordDetailScreenState extends State<RecordDetailScreen> {
   Widget _buildImagePlaceholders() {
     return Row(
       children: [
-        _buildImagePlaceholder(context,'User Image'),
+        // 첫 번째: 사용자 이미지 (before.png)
+        _buildImagePlaceholder(context, 'assets/images/before.png'),
         const SizedBox(width: 12),
-        _buildImagePlaceholder(context,'Generated Image'),
+        // 두 번째: 생성된 목표 이미지 (after.png)
+        _buildImagePlaceholder(context, 'assets/images/after.png'),
       ],
     );
   }
 
-  Widget _buildImagePlaceholder(BuildContext context, String text) {
+  // 변경된 _buildImagePlaceholder 함수
+  // 변경된 _buildImagePlaceholder 함수
+  Widget _buildImagePlaceholder(BuildContext context, String imagePath) {
     return Expanded(
       child: AspectRatio(
-        aspectRatio: 1.0,
+        aspectRatio: 1.0, // 1:1 비율 유지
         child: GestureDetector(
           onTap: () {
             Navigator.pushNamed(
               context,
               '/full_screen_image',
-              arguments: text,
+              arguments: imagePath,
             );
           },
-          child: Container(
+          child: Container( // ★★★ Container를 추가하여 배경색을 지정할 수 있도록 합니다.
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: Colors.white, // 여백으로 보일 배경색 (흰색 또는 Colors.grey[100] 등)
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Center(child: Text(text, style: TextStyle(color: Colors.grey[600]))),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                imagePath,
+                // ★★★ 여기를 BoxFit.contain으로 변경합니다! ★★★
+                fit: BoxFit.contain, // 이미지가 짤리지 않고 공간 안에 모두 들어오도록 합니다.
+                width: double.infinity,
+                height: double.infinity,
+                // 배경색을 설정하여 이미지 뒤의 여백 색상을 지정합니다.
+                // 이 색상은 Container의 배경색과 일치하는 것이 좋습니다.
+                color: Colors.white, // Image 위젯 자체의 배경색을 지정
+                colorBlendMode: BlendMode.dstOver, // 이미지가 위에 오도록 블렌드 모드 설정
+              ),
+            ),
           ),
         ),
       ),

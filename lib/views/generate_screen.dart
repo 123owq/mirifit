@@ -538,35 +538,43 @@ class _GenerateScreenState extends State<GenerateScreen> {
         const SizedBox(height: 12),
         _selectedImagePath != null
             ? Stack(
-          alignment: Alignment.topRight,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: _selectedImagePath!.startsWith('assets/')
-                  ? Image.asset(
-                _selectedImagePath!,
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
+                alignment: Alignment.topRight,
+                children: [
+                  Container( // ClipRRect 대신 Container로 감싸서 최대 높이 제한
+                    constraints: const BoxConstraints(
+                      maxHeight: 300, // 원하는 최대 높이 설정 (예: 300)
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _selectedImagePath!.startsWith('assets/')
+                          ? Image.asset(
+                        _selectedImagePath!,
+                        width: double.infinity,
+                        // height 속성 제거 또는 null
+                        fit: BoxFit.contain, // ★★★ contain으로 변경하여 비율 유지 및 잘림 방지
+                      )
+                          : Image.file(
+                        File(_selectedImagePath!),
+                        width: double.infinity,
+                        // height 속성 제거 또는 null
+                        fit: BoxFit.contain, // ★★★ contain으로 변경하여 비율 유지 및 잘림 방지
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.cancel, color: Colors.black54),
+                    onPressed: () {
+                      setState(() {
+                        _selectedImagePath = null;
+                        widget.onClearImage(); // ★ MainScreen에도 이미지가 지워졌다고 알림
+                      });
+                    },
+                  ),
+                ],
               )
-                  : Image.file(
-                File(_selectedImagePath!),
-                width: double.infinity,
-                height: 200,
-                fit: BoxFit.cover,
-              ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.cancel, color: Colors.black54),
-              onPressed: () {
-                setState(() {
-                  _selectedImagePath = null;
-                  widget.onClearImage();
-                });
-              },
-            ),
-          ],
-        )
             : Container(
           width: double.infinity,
           height: 150,
