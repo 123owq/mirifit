@@ -462,24 +462,29 @@ class _GenerateScreenState extends State<GenerateScreen> {
             ? Stack(
                 alignment: Alignment.topRight,
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    // ★ 9. [수정됨] 경로를 확인하여 Asset 또는 File 이미지 표시
-                    child: _selectedImagePath!.startsWith('assets/')
-                        ? Image.asset(
-                            // Asset 이미지 (크롬 데모)
-                            _selectedImagePath!,
-                            width: double.infinity,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          )
-                        : Image.file(
-                            // File 이미지 (카메라/갤러리)
-                            File(_selectedImagePath!),
-                            width: double.infinity,
-                            height: 200,
-                            fit: BoxFit.cover,
-                          ),
+                  Container( // ClipRRect 대신 Container로 감싸서 최대 높이 제한
+                    constraints: const BoxConstraints(
+                      maxHeight: 300, // 원하는 최대 높이 설정 (예: 300)
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: _selectedImagePath!.startsWith('assets/')
+                          ? Image.asset(
+                        _selectedImagePath!,
+                        width: double.infinity,
+                        // height 속성 제거 또는 null
+                        fit: BoxFit.contain, // ★★★ contain으로 변경하여 비율 유지 및 잘림 방지
+                      )
+                          : Image.file(
+                        File(_selectedImagePath!),
+                        width: double.infinity,
+                        // height 속성 제거 또는 null
+                        fit: BoxFit.contain, // ★★★ contain으로 변경하여 비율 유지 및 잘림 방지
+                      ),
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.cancel, color: Colors.black54),
