@@ -14,9 +14,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 class MainScreen extends StatefulWidget {
-  final AppMode mode;
   final FitnessData fitnessData;
-  const MainScreen({super.key, required this.mode, required this.fitnessData});
+  const MainScreen({super.key, required this.fitnessData});
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -168,15 +167,7 @@ class _MainScreenState extends State<MainScreen> {
           },
         );
       case 3:
-        return ProfileScreen(
-          currentMode: _currentMode,
-          onModeChanged: (newMode) {
-            setState(() {
-              _currentMode = newMode;
-            });
-            print("모드가 변경되었습니다: $_currentMode");
-          },
-        );
+        return ProfileScreen();
       default:
         return const Center(child: Text('Home 화면'));
     }

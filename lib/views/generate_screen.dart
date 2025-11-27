@@ -3,19 +3,16 @@ import 'package:image_picker/image_picker.dart'; // 갤러리용
 import 'dart:io'; // File 클래스용
 import 'package:permission_handler/permission_handler.dart';
 import '../models/fitness_data.dart';
-import '../models/app_mode.dart';
 import '../services/api_service.dart';
 import 'result_screen.dart'; // ResultScreen import
 
 class GenerateScreen extends StatefulWidget {
-  final AppMode mode;
   final FitnessData fitnessData; // FitnessData 전달 받기
   final String? initialImagePath;
   final VoidCallback onClearImage;
 
   const GenerateScreen({
     super.key,
-    required this.mode,
     required this.fitnessData, // 생성자에 추가
     this.initialImagePath,
     required this.onClearImage,
@@ -173,7 +170,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // (build 메서드의 나머지 부분은 2:13 PM 코드와 동일합니다)
     return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -197,13 +193,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
             _buildImagePicker(),
             const SizedBox(height: 24),
 
-            if (widget.mode == AppMode.simple)
-              _buildSimpleModeContent()
-            else
-              _buildPreciseModeContent(),
+            _buildPreciseModeContent(),
             const SizedBox(height: 16),
 
-            // ... (칼로리, 운동, 체중 카드 등은 2:13 PM 코드와 동일) ...
+            
             _buildProgressInfoCard(
               title: '현재 목표',
               value: '${_fitnessData.weightGoal.toInt()}kg 감량',

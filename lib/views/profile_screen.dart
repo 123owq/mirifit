@@ -1,14 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/app_mode.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final AppMode currentMode;
-  final Function(AppMode) onModeChanged;
-  const ProfileScreen({
-    super.key,
-    required this.currentMode,
-    required this.onModeChanged,
-  });
+  const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -70,29 +63,14 @@ class ProfileScreen extends StatelessWidget {
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min, // Row 크기를 내용물만큼만 잡기
                     children: [
-                      // 현재 모드 텍스트 표시
                       Text(
-                        currentMode == AppMode.precise ? '정밀 모드' : '간편 모드',
+                        "라이트모드",
                         style: TextStyle(
-                          color: currentMode == AppMode.precise
-                              ? Colors.blueAccent
-                              : Colors.grey,
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      // 스위치로 모드 변경 (ON=정밀, OFF=간편)
-                      Switch(
-                        value: currentMode == AppMode.precise,
-                        activeColor: Colors.blueAccent,
-                        onChanged: (value) {
-                          // 스위치를 켜면 정밀모드, 끄면 간편모드로 변경 요청
-                          onModeChanged(
-                            value ? AppMode.precise : AppMode.simple,
-                          );
-                        },
-                      ),
                     ],
                   ),
                 ),

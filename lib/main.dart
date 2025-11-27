@@ -16,7 +16,6 @@ import 'package:mirifit/views/record_detail_screen.dart';
 import 'package:mirifit/views/goal_by_date_screen.dart';
 import 'package:mirifit/views/profile_screen.dart';
 import 'package:mirifit/views/full_screen_image_screen.dart';
-import 'package:mirifit/models/app_mode.dart';
 
 void main() async {
   // 1. async 추가
