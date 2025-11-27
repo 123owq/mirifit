@@ -32,11 +32,11 @@ class _MainScreenState extends State<MainScreen> {
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
 
-  @override
-  void initState() {
-    super.initState();
-    _currentMode = widget.mode;
-  }
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   _currentMode = widget.mode;
+  // }
 
   @override
   void dispose() {
@@ -157,7 +157,7 @@ class _MainScreenState extends State<MainScreen> {
         return const ProgressScreen();
       case 2:
         return GenerateScreen(
-          mode: _currentMode,
+          //mode: _currentMode,
           fitnessData: widget.fitnessData,
           initialImagePath: _imagePathForGenerate,
           onClearImage: () {
