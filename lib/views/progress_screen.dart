@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../widgets/calendar.dart'; // 1. 캘린더 위젯 가져오기
+import '../widgets/calendar.dart';
+import 'package:mirifit/models/fitness_data.dart'; // ★ 1. 여기 Import 추가!
 
 class ProgressScreen extends StatelessWidget {
-  const ProgressScreen({super.key});
+  // ★ 2. 데이터를 받을 변수 추가
+  final FitnessData fitnessData;
+
+  // ★ 2. 생성자에서 데이터를 받도록 수정 (required this.fitnessData 추가)
+  const ProgressScreen({super.key, required this.fitnessData});
 
   @override
   Widget build(BuildContext context) {
-    // 2. "오늘" 날짜 가져오기
     final DateTime today = DateTime.now();
 
-    // 3. (임시) 최근 3일간의 더미 데이터
-    // (나중에는 이 부분을 실제 데이터베이스에서 불러와야 합니다)
     final List<Map<String, dynamic>> dummyData = [
-      {'activity': '75', 'calories': '468', 'achieved': true}, // 오늘
-      {'activity': '30', 'calories': '285', 'achieved': true}, // 어제
-      {'activity': '40', 'calories': '308', 'achieved': false}, // 그제
+      {'activity': '75', 'calories': '468', 'achieved': true},
+      {'activity': '30', 'calories': '285', 'achieved': true},
+      {'activity': '40', 'calories': '308', 'achieved': false},
     ];
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
@@ -33,17 +36,19 @@ class ProgressScreen extends StatelessWidget {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: [
-              // 2. 캘린더를 "처음부터 펼쳐진 상태"로 사용합니다.
-              const CalendarWidget(isInitiallyExpanded: true),
+              // ★ 3. 캘린더에 데이터 전달! (const 지우고 fitnessData 넣기)
+              CalendarWidget(
+                isInitiallyExpanded: true,
+                fitnessData: fitnessData, // 👈 여기서 데이터를 넘겨줌!
+              ),
               const SizedBox(height: 16),
 
               ...List.generate(3, (index) {
-                // index=0: 오늘, index=1: 어제, index=2: 그제
                 final DateTime date = today.subtract(Duration(days: index));
                 final String formattedDate = DateFormat('MM.dd.E', 'ko_KR').format(date);
 
                 return _buildRecordCard(
-                  context, // ★ 6. context 전달
+                  context,
                   date: formattedDate,
                   activityTime: dummyData[index]['activity']!,
                   calories: dummyData[index]['calories']!,
@@ -72,7 +77,6 @@ class ProgressScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // 카드 상단 (날짜, 목표 달성)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -95,39 +99,34 @@ class ProgressScreen extends StatelessWidget {
               ],
             ),
             const Divider(height: 24),
-            // 카드 하단 (이미지, 통계)
             Row(
               children: [
-                // 4. 회색 'User Image' 플레이스홀더로 변경
                 GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(
                       context,
                       '/full_screen_image',
-                      arguments: 'assets/images/before.png', // 이미지 대신 텍스트 전달
+                      arguments: 'assets/images/before.png',
                     );
                   },
                   child: Container(
                     width: 80,
                     height: 80,
                     decoration: BoxDecoration(
-                        color: Colors.white, // 여백으로 보일 흰색 배경
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!) // 둥근 모서리
+                        border: Border.all(color: Colors.grey[300]!)
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
                         'assets/images/before.png',
-                        // ★★★ 이미지가 짤리지 않고 공간 안에 모두 들어오도록 설정
                         fit: BoxFit.contain,
-
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(width: 16),
-                // 통계
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,7 +145,6 @@ class ProgressScreen extends StatelessWidget {
     );
   }
 
-  // --- 기록 카드 내부의 통계 행 위젯 ---
   Widget _buildStatRow(String title, String value, String unit) {
     return Row(
       children: [

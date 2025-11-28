@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:mirifit/models/fitness_data.dart';
 
 class CalendarWidget extends StatefulWidget {
   final bool isInitiallyExpanded;
+  final FitnessData? fitnessData;
 
   const CalendarWidget({
     super.key,
     this.isInitiallyExpanded = false,
+    this.fitnessData,
   });
 
   @override
@@ -29,11 +32,15 @@ class _CalendarWidgetState extends State<CalendarWidget> {
     final DateTime tapped = DateUtils.dateOnly(tappedDate);
 
     if (tapped.isBefore(today) || tapped.isAtSameMomentAs(today)) {
-      // 오늘 또는 과거 -> '기록/상세' 페이지로 이동
       Navigator.pushNamed(
         context,
         '/record_detail',
-        arguments: tappedDate, // 탭한 날짜를 전달
+        // ★★★ 여기를 Map으로 변경!
+        arguments: {
+          'date': tappedDate,
+          'weight': widget.fitnessData?.currentWeight ?? 0.0,
+          'height': widget.fitnessData?.height ?? 0.0,
+        },
       );
     } else {
       // 미래 -> '날짜별 목표' 페이지로 이동
