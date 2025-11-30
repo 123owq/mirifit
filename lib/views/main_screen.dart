@@ -28,6 +28,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final TextEditingController _targetWeightController = TextEditingController();
   String? _generatedImagePath;
+  String? _inputImagePath; // ★ 카메라로 찍은 사진 경로 저장
   int? _daysToGoal;
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
@@ -45,12 +46,21 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   Future<void> _handleConfirm() async {
+    // ★ 수정: 입력 이미지 경로와 목표 체중 둘 다 필요
     if (_targetWeightController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('목표 체중을 입력해주세요.')),
       );
       return;
     }
+    // ★ 카메라나 갤러리에서 이미지를 선택했는지 확인
+    if (_inputImagePath == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지를 먼저 선택해주세요.')),
+      );
+      return;
+    }
+
 
     setState(() {
       _isLoading = true;
@@ -59,12 +69,13 @@ class _MainScreenState extends State<MainScreen> {
     try {
       final targetWeight = double.parse(_targetWeightController.text);
 
-      final byteData = await rootBundle.load('assets/images/fitness_image.jpeg');
-      final buffer = byteData.buffer;
-      final tempDir = await getTemporaryDirectory();
-      final tempPath = '${tempDir.path}/temp_fitness_image.jpeg';
-      final imageFile = await File(tempPath).writeAsBytes(
-          buffer.asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
+      // ★ 수정: _inputImagePath가 있으면 그 파일을 사용, 없으면 기존 asset 사용
+      File imageFile;
+      if (_inputImagePath != null) {
+        imageFile = File(_inputImagePath!);
+      } else {
+        throw Exception('이미지 파일을 찾을 수 없습니다.');
+      }
 
       final response = await _apiService.getFutureImage(
         targetWeight: targetWeight,
@@ -217,6 +228,21 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
+                // ★ 추가: 카메라 아이콘 버튼
+                IconButton(
+                  icon: const Icon(Icons.camera_alt, color: Colors.blueAccent),
+                  onPressed: () async {
+                    final imagePath = await Navigator.pushNamed(context, '/camera');
+                    if (imagePath != null && imagePath is String) {
+                      setState(() {
+                        _inputImagePath = imagePath;
+                        // ★ 새로운 이미지를 찍으면, 이전 생성 결과는 초기화
+                        _generatedImagePath = null;
+                        _daysToGoal = null;
+                      });
+                    }
+                  },
+                ),
                 ElevatedButton(
                   onPressed: _handleConfirm,
                   child: const Text('확인'),
@@ -226,6 +252,8 @@ class _MainScreenState extends State<MainScreen> {
             const SizedBox(height: 20),
             if (_isLoading)
               const CircularProgressIndicator()
+            // ★ 수정: 이미지 표시 우선순위 변경
+            // 1. API 결과 이미지 (_generatedImagePath)
             else if (_generatedImagePath != null && _daysToGoal != null)
               Column(
                 children: [
@@ -245,13 +273,22 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                 ],
               )
-            else
-              Image.asset(
-                'assets/images/fitness_image.jpeg',
+            // 2. 사용자가 찍은/선택한 이미지 (_inputImagePath)
+            else if (_inputImagePath != null)
+              Image.file(
+                File(_inputImagePath!),
                 height: 460,
                 width: double.infinity,
                 fit: BoxFit.cover,
-              ),
+              )
+            // 3. 기본 이미지 (asset)
+            // else
+            //   Image.asset(
+            //     'assets/images/fitness_image.jpeg',
+            //     height: 460,
+            //     width: double.infinity,
+            //     fit: BoxFit.cover,
+            //   ),
           ],
         ),
       ),
