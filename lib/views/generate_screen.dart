@@ -29,6 +29,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
   final ImagePicker _picker = ImagePicker();
   final ApiService _apiService = ApiService();
 
+  // ★ 1. 몸무게 입력을 위한 컨트롤러 추가
+  final TextEditingController _weightController = TextEditingController();
+
   // 칼로리 조절을 위한 상태 변수
   late double _caloriesIntake; // 섭취 칼로리 (슬라이더 값)
   late double _caloriesBurned; // 소모 칼로리 (슬라이더 값)
@@ -42,6 +45,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
     super.initState();
     _fitnessData = widget.fitnessData;
     _selectedImagePath = widget.initialImagePath;
+
+    // ★ 2. 컨트롤러 초기값 설정
+    _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
 
     // 1. 기초대사량 (BMR) 계산 및 초기값 설정
     _bmr = _calculateBMR(
@@ -58,6 +64,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
   }
 
   @override
+  void dispose() {
+    // ★ 3. 컨트롤러 해제
+    _weightController.dispose();
+    super.dispose();
+  }
+
+  @override
   void didUpdateWidget(covariant GenerateScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.initialImagePath != oldWidget.initialImagePath) {
@@ -68,6 +81,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     if (widget.fitnessData != oldWidget.fitnessData) {
       setState(() {
         _fitnessData = widget.fitnessData;
+        _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1); // 컨트롤러도 업데이트
 
         final newBMR = _calculateBMR(
           _fitnessData.gender,
@@ -81,6 +95,46 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _caloriesIntake = newBMR.toDouble();
         _caloriesBurned = newBMR.toDouble();
       });
+    }
+  }
+
+  // ★ 4. 몸무게 업데이트 및 BMR 재계산 함수
+  void _updateWeightAndBMR(String weightString) {
+    // 입력된 텍스트에서 숫자만 추출하거나 파싱 시도
+    final double? newWeight = double.tryParse(weightString.trim());
+
+    // 파싱에 성공했고, 양수이며, 현재 값과 다를 때만 업데이트
+    if (newWeight != null && newWeight > 0 && (newWeight - _fitnessData.currentWeight).abs() > 0.1) {
+      setState(() {
+        // FitnessData 업데이트
+        _fitnessData = _fitnessData.copyWith(currentWeight: newWeight);
+
+        // BMR 및 최대 칼로리 재계산
+        final newBMR = _calculateBMR(
+          _fitnessData.gender,
+          _fitnessData.height,
+          newWeight,
+          _fitnessData.age,
+        );
+
+        _bmr = newBMR;
+        _maxCalorie = _bmr * 2;
+
+        // 슬라이더 초기화 (재설정)
+        _caloriesIntake = newBMR.toDouble();
+        _caloriesBurned = newBMR.toDouble();
+      });
+
+      // UI에 업데이트된 몸무게 반영 (소수점 1자리로 통일)
+      _weightController.text = newWeight.toStringAsFixed(1);
+      _showSnackBar('몸무게가 ${newWeight.toStringAsFixed(1)} kg으로 업데이트되었습니다. BMR이 재계산되었습니다.', Colors.green);
+    } else if (newWeight == null || newWeight <= 0) {
+      // 유효하지 않은 입력인 경우, 기존 유효한 값으로 되돌림
+      _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
+      _showSnackBar('유효한 몸무게(양수)를 입력해주세요.', Colors.orange);
+    } else {
+      // 입력은 유효하나 값이 변하지 않은 경우 (Do nothing)
+      _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
     }
   }
 
@@ -98,6 +152,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
     return max(0, bmr.round());
   }
   // ----------------------------------------
+
+  // ... (rest of _pickImage, _generateImage, _showSnackBar functions - no changes)
 
   Future<void> _pickImage(ImageSource source) async {
     String? imagePath;
@@ -144,6 +200,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
       final String sex = _fitnessData.gender == '남성' ? 'male' : 'female';
       final double height = _fitnessData.height;
       final int age = _fitnessData.age;
+      // 최신 업데이트된 몸무게 사용
       final double currentWeight = _fitnessData.currentWeight;
 
       // 슬라이더에서 조절된 값 사용
@@ -204,6 +261,57 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
+  // ★ 5. 몸무게 입력 위젯
+  Widget _buildWeightInput() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          '현재 몸무게 (kg)',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF666666),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _weightController,
+          // 숫자와 소수점만 입력 가능하게 설정
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textAlign: TextAlign.start,
+          decoration: InputDecoration(
+            hintText: '예: 70.5',
+            suffixText: 'kg',
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFF5B9FED), width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            filled: true,
+            fillColor: Colors.white,
+          ),
+          // 포커스가 사라질 때 몸무게 업데이트 및 BMR 재계산
+          onTapOutside: (event) {
+            FocusScope.of(context).unfocus();
+            _updateWeightAndBMR(_weightController.text);
+          },
+          // 제출(엔터) 시 몸무게 업데이트 및 BMR 재계산
+          onFieldSubmitted: _updateWeightAndBMR,
+        ),
+      ],
+    );
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -227,6 +335,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
 
             // 이미지 선택기 UI
             _buildImagePicker(),
+            const SizedBox(height: 24),
+
+            // ★ 몸무게 입력 칸 추가
+            _buildWeightInput(),
             const SizedBox(height: 24),
 
             // 칼로리 슬라이더 위젯 삽입
@@ -373,7 +485,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
     required String maxLabel,
   }) {
     // Max Calorine을 기준으로 정규화된 값 계산 (0.0 ~ 1.0)
-    final double normalizedValue = (currentValue.clamp(0.0, _maxCalorie.toDouble())) / _maxCalorie;
+    final double normalizedValue = (_maxCalorie > 0) ? (currentValue.clamp(0.0, _maxCalorie.toDouble())) / _maxCalorie : 0.0;
+
 
     // 파란색 그라데이션
     final Color barColor = Color.lerp(
@@ -473,8 +586,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
               ),
 
               // 기초대사량 (BMR) 표시 마커 (50% 지점)
+              // Stack의 크기 계산을 위해 MediaQuery 대신 고정 너비 사용 (Padding을 고려하여 40을 뺌)
               Positioned(
-                // 바 너비의 중앙 위치 계산
                 left: (_maxCalorie > 0) ? (MediaQuery.of(context).size.width - 40) * 0.5 - 20 - 2 : 0,
                 child: Container(
                   width: 4,
