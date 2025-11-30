@@ -80,14 +80,14 @@ class ResultScreen extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Column(
-                  children: const [
-                    Icon(
+                  children: [
+                    const Icon(
                       Icons.favorite,
                       size: 48,
                       color: Color(0xFF5B9FED),
                     ),
-                    SizedBox(height: 16),
-                    Text(
+                    const SizedBox(height: 16),
+                    const Text(
                       '피트니스 목표를 착실히 달성하고 있네요.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -96,8 +96,8 @@ class ResultScreen extends StatelessWidget {
                         color: Color(0xFF1A1A1A),
                       ),
                     ),
-                    SizedBox(height: 12),
-                    Text(
+                    const SizedBox(height: 12),
+                    const Text(
                       '이 이미지는 매일 쌓아가는 당신의 노력과 강인함을 보여줘요.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -106,8 +106,8 @@ class ResultScreen extends StatelessWidget {
                         height: 1.5,
                       ),
                     ),
-                    SizedBox(height: 8),
-                    Text(
+                    const SizedBox(height: 8),
+                    const Text(
                       '계속 힘내세요',
                       textAlign: TextAlign.center,
                       style: TextStyle(
@@ -115,6 +115,17 @@ class ResultScreen extends StatelessWidget {
                         color: Color(0xFF666666),
                       ),
                     ),
+                    const SizedBox(height: 16), // 간격 추가
+                    if (args != null && args.containsKey('weight'))
+                      Text(
+                        '예상 몸무게: ${args['weight'].toStringAsFixed(1)} kg',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
                   ],
                 ),
               ),
