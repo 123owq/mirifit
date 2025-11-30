@@ -154,7 +154,9 @@ class _MainScreenState extends State<MainScreen> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                const CalendarWidget(),
+                CalendarWidget(
+                  fitnessData: widget.fitnessData,
+                ),
                 const SizedBox(height: 20),
                 _buildProgressCard(),
                 const SizedBox(height: 20),
@@ -165,7 +167,7 @@ class _MainScreenState extends State<MainScreen> {
           ),
         );
       case 1:
-        return const ProgressScreen();
+        return ProgressScreen(fitnessData: widget.fitnessData);
       case 2:
         return GenerateScreen(
           //mode: _currentMode,
