@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:mirifit/models/fitness_data.dart';
 import 'package:mirifit/services/api_service.dart';
 import '../widgets/custom_bottom_nav_bar.dart';
@@ -32,6 +33,7 @@ class _MainScreenState extends State<MainScreen> {
   int? _daysToGoal;
   bool _isLoading = false;
   final ApiService _apiService = ApiService();
+  final ImagePicker _picker = ImagePicker();
 
   // @override
   // void initState() {
@@ -107,6 +109,17 @@ class _MainScreenState extends State<MainScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('오류가 발생했습니다: $e')),
       );
+    }
+  }
+
+  Future<void> _pickImageFromGallery() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _inputImagePath = image.path;
+        _generatedImagePath = null;
+        _daysToGoal = null;
+      });
     }
   }
 
@@ -244,6 +257,11 @@ class _MainScreenState extends State<MainScreen> {
                       });
                     }
                   },
+                ),
+                // ★ 추가: 갤러리 아이콘 버튼
+                IconButton(
+                  icon: const Icon(Icons.photo_library, color: Colors.blueAccent),
+                  onPressed: _pickImageFromGallery,
                 ),
                 ElevatedButton(
                   onPressed: _handleConfirm,
