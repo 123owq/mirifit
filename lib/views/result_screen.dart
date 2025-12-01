@@ -115,17 +115,7 @@ class ResultScreen extends StatelessWidget {
                         color: Color(0xFF666666),
                       ),
                     ),
-                    const SizedBox(height: 16), // 간격 추가
-                    if (args != null && args.containsKey('weight'))
-                      Text(
-                        '예상 몸무게: ${args['weight'].toStringAsFixed(1)} kg',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
-                        ),
-                      ),
+                    _buildWeightWidget(args),
                   ],
                 ),
               ),
@@ -211,6 +201,29 @@ class ResultScreen extends StatelessWidget {
   }
 
   // 5. Uint8List를 받는 위젯 (변경 없음)
+  Widget _buildWeightWidget(Map<String, dynamic>? args) {
+    if (args == null || !args.containsKey('prediction') || !(args['prediction'] is Map) || !(args['prediction'] as Map).containsKey('predicted_weight_kg')) {
+      return Container(); // 데이터가 없거나 형식이 일치하지 않으면 빈 위젯 반환
+    }
+
+    final dynamic weightValue = (args['prediction'] as Map)['predicted_weight_kg'];
+    final double? weight = double.tryParse(weightValue.toString());
+
+    if (weight == null) {
+      return Container(); // 숫자로 변환 실패 시 빈 위젯 반환
+    }
+
+    return Text(
+      '예상 몸무게: ${weight.toStringAsFixed(1)} kg',
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: Color(0xFF1A1A1A),
+      ),
+    );
+  }
+
   Widget _buildImageWidget(Uint8List? imageBytes) {
     if (imageBytes != null && imageBytes.isNotEmpty) {
       return Image.memory(
