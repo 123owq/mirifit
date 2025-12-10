@@ -1,20 +1,54 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // 갤러리용
-import 'dart:io'; // File 클래스용
+import 'package:flutter/cupertino.dart'; // 시간 선택을 위해 추가
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'package:permission_handler/permission_handler.dart';
 import '../models/fitness_data.dart';
 import '../services/api_service.dart';
-import 'result_screen.dart'; // ResultScreen import
-import 'dart:math'; // min/max 함수 사용을 위해 추가
+import 'result_screen.dart';
+import 'dart:math';
 
+// ----------------------------------------------------
+// 🔥 MET 운동 활동 모델 정의 (새로 추가)
+// ----------------------------------------------------
+class METActivity {
+  final String name; // 운동 이름
+  final double metValue; // MET 값
+  final IconData icon; // 표시할 아이콘
+
+  const METActivity({
+    required this.name,
+    required this.metValue,
+    required this.icon,
+  });
+}
+
+// ----------------------------------------------------
+// 🔥 기록된 활동 모델 정의 (새로 추가)
+// ----------------------------------------------------
+class RecordedActivity {
+  final METActivity activity;
+  final int minutes; // 운동 시간 (분)
+  final double calories; // 소모 칼로리
+
+  RecordedActivity({
+    required this.activity,
+    required this.minutes,
+    required this.calories,
+  });
+}
+
+// ----------------------------------------------------
+// GenerateScreen 클래스 (기존과 동일)
+// ----------------------------------------------------
 class GenerateScreen extends StatefulWidget {
-  final FitnessData fitnessData; // FitnessData 전달 받기
+  final FitnessData fitnessData;
   final String? initialImagePath;
   final VoidCallback onClearImage;
 
   const GenerateScreen({
     super.key,
-    required this.fitnessData, // 생성자에 추가
+    required this.fitnessData,
     this.initialImagePath,
     required this.onClearImage,
   });
@@ -29,16 +63,32 @@ class _GenerateScreenState extends State<GenerateScreen> {
   final ImagePicker _picker = ImagePicker();
   final ApiService _apiService = ApiService();
 
-  // ★ 1. 몸무게 입력을 위한 컨트롤러 추가
   final TextEditingController _weightController = TextEditingController();
 
   // 칼로리 조절을 위한 상태 변수
   late double _caloriesIntake; // 섭취 칼로리 (슬라이더 값)
-  late double _caloriesBurned; // 소모 칼로리 (슬라이더 값)
+  late double _caloriesBurned; // 소모 칼로리 (슬라이더 값 - API 전송용)
   late int _bmr; // 기초대사량 (Base Metabolic Rate)
   late int _maxCalorie; // 최대 수치 (BMR의 2배)
 
   bool _isLoading = false;
+
+  // 🔥 MET 기반 운동 기록 상태 변수 (새로 추가)
+  List<RecordedActivity> _recordedActivities = [];
+  double _totalCaloriesBurned = 0.0; // 총 소비 칼로리
+
+  // 🔥 운동 종류 목록 (MET 값과 아이콘 포함) (새로 추가)
+  final List<METActivity> _metActivities = const [
+    METActivity(name: '달리기', metValue: 8.0, icon: Icons.directions_run),
+    METActivity(name: '걷기', metValue: 3.5, icon: Icons.directions_walk),
+    METActivity(name: '자전거 타기', metValue: 7.5, icon: Icons.bike_scooter),
+    METActivity(name: '수영', metValue: 6.0, icon: Icons.pool),
+    METActivity(name: '요가', metValue: 3.0, icon: Icons.self_improvement),
+    METActivity(name: '근력 운동', metValue: 5.0, icon: Icons.fitness_center),
+    METActivity(name: '축구', metValue: 7.0, icon: Icons.sports_soccer),
+    // 필요한 다른 활동 추가
+  ];
+
 
   @override
   void initState() {
@@ -46,26 +96,24 @@ class _GenerateScreenState extends State<GenerateScreen> {
     _fitnessData = widget.fitnessData;
     _selectedImagePath = widget.initialImagePath;
 
-    // ★ 2. 컨트롤러 초기값 설정
     _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
 
-    // 1. 기초대사량 (BMR) 계산 및 초기값 설정
     _bmr = _calculateBMR(
       _fitnessData.gender,
       _fitnessData.height,
       _fitnessData.currentWeight,
       _fitnessData.age,
     );
-    _maxCalorie = _bmr * 2; // 최대 수치는 BMR의 2배
+    _maxCalorie = _bmr * 2;
 
-    // 초기 슬라이더 값: BMR을 기준으로 설정
     _caloriesIntake = _bmr.toDouble();
+    // 초기 소모 칼로리 값도 BMR로 설정
     _caloriesBurned = _bmr.toDouble();
   }
 
+  // (이하 dispose, didUpdateWidget, _updateWeightAndBMR, _calculateBMR, _pickImage, _generateImage, _showSnackBar 생략 - 변경 없음)
   @override
   void dispose() {
-    // ★ 3. 컨트롤러 해제
     _weightController.dispose();
     super.dispose();
   }
@@ -81,7 +129,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
     if (widget.fitnessData != oldWidget.fitnessData) {
       setState(() {
         _fitnessData = widget.fitnessData;
-        _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1); // 컨트롤러도 업데이트
+        _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
 
         final newBMR = _calculateBMR(
           _fitnessData.gender,
@@ -98,18 +146,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
     }
   }
 
-  // ★ 4. 몸무게 업데이트 및 BMR 재계산 함수
   void _updateWeightAndBMR(String weightString) {
-    // 입력된 텍스트에서 숫자만 추출하거나 파싱 시도
     final double? newWeight = double.tryParse(weightString.trim());
 
-    // 파싱에 성공했고, 양수이며, 현재 값과 다를 때만 업데이트
     if (newWeight != null && newWeight > 0 && (newWeight - _fitnessData.currentWeight).abs() > 0.1) {
       setState(() {
-        // FitnessData 업데이트
         _fitnessData = _fitnessData.copyWith(currentWeight: newWeight);
 
-        // BMR 및 최대 칼로리 재계산
         final newBMR = _calculateBMR(
           _fitnessData.gender,
           _fitnessData.height,
@@ -120,40 +163,32 @@ class _GenerateScreenState extends State<GenerateScreen> {
         _bmr = newBMR;
         _maxCalorie = _bmr * 2;
 
-        // 슬라이더 초기화 (재설정)
         _caloriesIntake = newBMR.toDouble();
-        _caloriesBurned = newBMR.toDouble();
+        // 몸무게가 바뀌면 MET 기반 총 칼로리도 재계산
+        _recalculateTotalBurnedCalories();
+        // API 전송용 _caloriesBurned도 총 칼로리 값으로 업데이트
+        _caloriesBurned = _totalCaloriesBurned;
       });
 
-      // UI에 업데이트된 몸무게 반영 (소수점 1자리로 통일)
       _weightController.text = newWeight.toStringAsFixed(1);
       _showSnackBar('몸무게가 ${newWeight.toStringAsFixed(1)} kg으로 업데이트되었습니다. BMR이 재계산되었습니다.', Colors.green);
     } else if (newWeight == null || newWeight <= 0) {
-      // 유효하지 않은 입력인 경우, 기존 유효한 값으로 되돌림
       _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
       _showSnackBar('유효한 몸무게(양수)를 입력해주세요.', Colors.orange);
     } else {
-      // 입력은 유효하나 값이 변하지 않은 경우 (Do nothing)
       _weightController.text = _fitnessData.currentWeight.toStringAsFixed(1);
     }
   }
 
-  // --- BMR 계산 함수 (Harris-Benedict 공식) ---
   int _calculateBMR(String gender, double height, double weight, int age) {
     double bmr;
     if (gender == '남성') {
-      // 남성: 66.47 + (13.75 * 체중) + (5 * 키) - (6.76 * 나이)
       bmr = 66.47 + (13.75 * weight) + (5 * height) - (6.76 * age);
     } else {
-      // 여성: 655.1 + (9.56 * 체중) + (1.85 * 키) - (4.68 * 나이)
       bmr = 655.1 + (9.56 * weight) + (1.85 * height) - (4.68 * age);
     }
-    // BMR은 0보다 작을 수 없으며, 정수로 반환
     return max(0, bmr.round());
   }
-  // ----------------------------------------
-
-  // ... (rest of _pickImage, _generateImage, _showSnackBar functions - no changes)
 
   Future<void> _pickImage(ImageSource source) async {
     String? imagePath;
@@ -200,16 +235,13 @@ class _GenerateScreenState extends State<GenerateScreen> {
       final String sex = _fitnessData.gender == '남성' ? 'male' : 'female';
       final double height = _fitnessData.height;
       final int age = _fitnessData.age;
-      // 최신 업데이트된 몸무게 사용
       final double currentWeight = _fitnessData.currentWeight;
 
-      // 슬라이더에서 조절된 값 사용
-      final int dailyCaloriesBurned = _caloriesBurned.round();
+      final int dailyCaloriesBurned = _totalCaloriesBurned.round(); // 🔥 MET 기반 총 소모 칼로리 사용
       final int dailyCaloriesIntake = _caloriesIntake.round();
-      final double bellySize = 0.0; // 임시값
+      final double bellySize = 0.0;
 
-      // 기간 선택 (예: '6개월' -> 180일)
-      int days = 90; // 기본값
+      int days = 90;
       if (_fitnessData.selectedPeriod == '6개월') {
         days = 180;
       } else if (_fitnessData.selectedPeriod == '12개월') {
@@ -232,7 +264,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
         bellySize: bellySize,
       );
 
-      // 성공 시 result_screen으로 이동
       if (mounted) {
         Navigator.push(
           context,
@@ -261,8 +292,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // ★ 5. 몸무게 입력 위젯
   Widget _buildWeightInput() {
+    // ... (기존 _buildWeightInput 내용과 동일)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -277,7 +308,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
         const SizedBox(height: 12),
         TextFormField(
           controller: _weightController,
-          // 숫자와 소수점만 입력 가능하게 설정
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textAlign: TextAlign.start,
           decoration: InputDecoration(
@@ -299,18 +329,217 @@ class _GenerateScreenState extends State<GenerateScreen> {
             filled: true,
             fillColor: Colors.white,
           ),
-          // 포커스가 사라질 때 몸무게 업데이트 및 BMR 재계산
           onTapOutside: (event) {
             FocusScope.of(context).unfocus();
             _updateWeightAndBMR(_weightController.text);
           },
-          // 제출(엔터) 시 몸무게 업데이트 및 BMR 재계산
           onFieldSubmitted: _updateWeightAndBMR,
         ),
       ],
     );
   }
 
+
+  // 🔥 MET 칼로리 계산 함수 (새로 추가)
+  // 소모 칼로리 (kcal) = METs * 3.5 * 체중(kg) * 시간(분) / 200
+  double _calculateMetCalories(double metValue, int minutes) {
+    // 현재 몸무게 사용
+    final double weight = _fitnessData.currentWeight;
+    if (weight <= 0) return 0.0;
+
+    // 계산: METs * 3.5 * 체중(kg) * (시간/60) / 5
+    // 또는 METs * 3.5 * 체중(kg) * 시간(분) / 200 (분 단위 공식)
+    double calories = metValue * 3.5 * weight * minutes / 200;
+    return calories; // 소수점 2자리에서 반올림
+  }
+
+  // 🔥 총 소비 칼로리 재계산 (새로 추가)
+  void _recalculateTotalBurnedCalories() {
+    double total = 0.0;
+    for (var activity in _recordedActivities) {
+      // 기존 저장된 activity의 metValue와 minutes를 사용하여 현재 weight로 재계산
+      total += _calculateMetCalories(activity.activity.metValue, activity.minutes);
+    }
+    setState(() {
+      _totalCaloriesBurned = total;
+      // API 전송용 변수도 업데이트
+      _caloriesBurned = total;
+    });
+  }
+
+  // 🔥 운동 선택 다이얼로그 (새로 추가)
+  Future<void> _showExerciseSelectionDialog() async {
+    final selectedActivity = await showModalBottomSheet<METActivity>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return ClipRRect(
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          child: Container(
+            color: Colors.white,
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Center(
+                  child: Text(
+                    '운동 종류 선택',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const Divider(),
+                Expanded(
+                  child: GridView.builder(
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 0.8, // 아이콘과 텍스트 공간 확보
+                    ),
+                    itemCount: _metActivities.length,
+                    itemBuilder: (context, index) {
+                      final activity = _metActivities[index];
+                      return GestureDetector(
+                        onTap: () => Navigator.pop(context, activity),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0F0F0),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                activity.icon,
+                                size: 40,
+                                color: const Color(0xFF5B9FED),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              activity.name,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '${activity.metValue} METs',
+                              style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (selectedActivity != null) {
+      _showTimeInputDialog(selectedActivity);
+    }
+  }
+
+  // 🔥 시간 입력 다이얼로그 (CupertinoPicker 사용) (새로 추가)
+  Future<void> _showTimeInputDialog(METActivity activity) async {
+    int selectedHours = 0;
+    int selectedMinutes = 0;
+
+    // 최대 시간 설정 (예: 5시간 59분)
+    const int maxHours = 5;
+    const int maxMinutes = 59;
+
+    await showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Container(
+          height: 300,
+          color: Colors.white,
+          child: Column(
+            children: <Widget>[
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Text(
+                  '${activity.name} 운동 시간 입력 (최대 ${maxHours}시간 ${maxMinutes}분)',
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    // 시간 선택 휠
+                    SizedBox(
+                      width: 80,
+                      child: CupertinoPicker(
+                        scrollController: FixedExtentScrollController(initialItem: 0),
+                        itemExtent: 32.0,
+                        onSelectedItemChanged: (int index) {
+                          selectedHours = index;
+                        },
+                        children: List<Widget>.generate(maxHours + 1, (int index) {
+                          return Center(child: Text('$index 시간'));
+                        }),
+                      ),
+                    ),
+                    // 분 선택 휠
+                    SizedBox(
+                      width: 80,
+                      child: CupertinoPicker(
+                        scrollController: FixedExtentScrollController(initialItem: 0),
+                        itemExtent: 32.0,
+                        onSelectedItemChanged: (int index) {
+                          selectedMinutes = index;
+                        },
+                        children: List<Widget>.generate(maxMinutes + 1, (int index) {
+                          return Center(child: Text('$index 분'));
+                        }),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(
+                width: double.infinity,
+                child: CupertinoButton(
+                  color: const Color(0xFF5B9FED),
+                  child: const Text('확인'),
+                  onPressed: () {
+                    // 총 운동 시간 (분) 계산
+                    final int totalMinutes = (selectedHours * 60) + selectedMinutes;
+                    if (totalMinutes > 0) {
+                      final double calories = _calculateMetCalories(activity.metValue, totalMinutes);
+                      setState(() {
+                        // 기록 추가
+                        _recordedActivities.add(RecordedActivity(
+                          activity: activity,
+                          minutes: totalMinutes,
+                          calories: calories,
+                        ));
+                        _totalCaloriesBurned += calories; // 총합 업데이트
+                        _caloriesBurned = _totalCaloriesBurned; // API 전송용 변수 업데이트
+                      });
+                      Navigator.pop(context); // 다이얼로그 닫기
+                    } else {
+                      _showSnackBar('최소 1분 이상의 시간을 입력해주세요.', Colors.orange);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -333,19 +562,21 @@ class _GenerateScreenState extends State<GenerateScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 이미지 선택기 UI
             _buildImagePicker(),
             const SizedBox(height: 24),
 
-            // ★ 몸무게 입력 칸 추가
             _buildWeightInput(),
             const SizedBox(height: 24),
 
-            // 칼로리 슬라이더 위젯 삽입
-            _buildCalorieSliders(),
+            // 🔥 섭취 칼로리 슬라이더 (수정된 버전)
+            _buildCalorieIntakeSlider(),
             const SizedBox(height: 24),
 
-            // 기간 선택 버튼들
+            // 🔥 소비 칼로리 (MET 기반) (새로 추가)
+            _buildCalorieBurnedMet(),
+            const SizedBox(height: 24),
+
+            // (이하 기간 선택 및 이미지 생성 버튼 기존과 동일)
             const Text(
               '기간 선택',
               style: TextStyle(
@@ -357,42 +588,21 @@ class _GenerateScreenState extends State<GenerateScreen> {
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildPeriodButton(
-                    '6개월',
-                    _fitnessData.selectedPeriod == '6개월',
-                  ),
-                ),
+                Expanded(child: _buildPeriodButton('6개월', _fitnessData.selectedPeriod == '6개월')),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildPeriodButton(
-                    '12개월',
-                    _fitnessData.selectedPeriod == '12개월',
-                  ),
-                ),
+                Expanded(child: _buildPeriodButton('12개월', _fitnessData.selectedPeriod == '12개월')),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: _buildPeriodButton(
-                    '18개월',
-                    _fitnessData.selectedPeriod == '18개월',
-                  ),
-                ),
+                Expanded(child: _buildPeriodButton('18개월', _fitnessData.selectedPeriod == '18개월')),
                 const SizedBox(width: 12),
-                Expanded(
-                  child: _buildPeriodButton(
-                    '24개월',
-                    _fitnessData.selectedPeriod == '24개월',
-                  ),
-                ),
+                Expanded(child: _buildPeriodButton('24개월', _fitnessData.selectedPeriod == '24개월')),
               ],
             ),
             const SizedBox(height: 32),
 
-            // 이미지 생성 버튼
             SizedBox(
               width: double.infinity,
               height: 56,
@@ -431,67 +641,182 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // ★ 칼로리 슬라이더 메인 위젯
-  Widget _buildCalorieSliders() {
-    return Column(
-      children: [
-        // 섭취 칼로리 슬라이더
-        _buildCalorieSliderCard(
-          title: '섭취 칼로리',
-          subTitle: '평소를 기준으로 선택해주세요.',
-          icon: Icons.fastfood,
-          iconColor: const Color(0xFF1A1A1A), // 흑백(진한 회색)
-          currentValue: _caloriesIntake,
-          onChanged: (newValue) {
-            setState(() {
-              _caloriesIntake = newValue; // 스무스하게 움직이도록 double 유지
-            });
-          },
-          minLabel: '공복',
-          midLabel: '보통',
-          maxLabel: '많이 먹음',
-        ),
-        const SizedBox(height: 16),
-        // 소모 칼로리 슬라이더 (운동강도)
-        _buildCalorieSliderCard(
-          title: '운동강도',
-          subTitle: '평소를 기준으로 선택해주세요.',
-          icon: Icons.fitness_center, // 역기 아이콘
-          iconColor: const Color(0xFF1A1A1A), // 흑백(진한 회색)
-          currentValue: _caloriesBurned,
-          onChanged: (newValue) {
-            setState(() {
-              _caloriesBurned = newValue; // 스무스하게 움직이도록 double 유지
-            });
-          },
-          minLabel: '운동량 없음',
-          midLabel: '보통',
-          maxLabel: '운동량 많음',
-        ),
-      ],
+  // 🔥 섭취 칼로리 슬라이더 위젯 (수정: 툴팁으로 수치 표시)
+  Widget _buildCalorieIntakeSlider() {
+    return _buildCalorieSliderCard(
+      title: '섭취 칼로리',
+      subTitle: '평소를 기준으로 선택해주세요.',
+      icon: Icons.fastfood,
+      currentValue: _caloriesIntake,
+      onChanged: (newValue) {
+        setState(() {
+          _caloriesIntake = newValue;
+        });
+      },
+      minLabel: '공복',
+      midLabel: '보통',
+      maxLabel: '많이 먹음',
+      // 슬라이더에 툴팁 기능 추가
+      showTooltip: true,
     );
   }
 
-  // ★ 칼로리 슬라이더 개별 카드 위젯 (최종 수정)
+  // 🔥 소비 칼로리 (MET 기반) 위젯 (새로 추가)
+  Widget _buildCalorieBurnedMet() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 헤더
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  Text(
+                    '소비 칼로리',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A1A),
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'MET 기반 운동 기록',
+                    style: TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
+                  ),
+                ],
+              ),
+              const Icon(Icons.local_fire_department, color: Color(0xFF1A1A1A), size: 32),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // 기록된 운동 목록
+          ..._recordedActivities.map((activity) {
+            final double calories = activity.calories;
+            final int minutes = activity.minutes;
+            final String hours = (minutes ~/ 60).toString().padLeft(2, '0');
+            final String mins = (minutes % 60).toString().padLeft(2, '0');
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Row(
+                children: [
+                  Icon(activity.activity.icon, size: 20, color: const Color(0xFF5B9FED)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          activity.activity.name,
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                        ),
+                        Text(
+                          '$hours H $mins M',
+                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '${calories.round()} kcal',
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A)),
+                  ),
+                  // 삭제 버튼
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline, color: Colors.redAccent, size: 20),
+                    onPressed: () {
+                      setState(() {
+                        _totalCaloriesBurned -= activity.calories;
+                        _caloriesBurned = _totalCaloriesBurned; // API 전송용 변수 업데이트
+                        _recordedActivities.remove(activity);
+                      });
+                    },
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+
+          // '+' 버튼 (그림의 요구사항)
+          GestureDetector(
+            onTap: _showExerciseSelectionDialog,
+            child: Container(
+              margin: EdgeInsets.only(top: _recordedActivities.isEmpty ? 0 : 8.0), // 첫 항목이 아닐 경우만 상단 마진
+              height: 40,
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0F0F0),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE0E0E0)),
+              ),
+              child: const Center(
+                child: Icon(Icons.add, color: Color(0xFF5B9FED)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Total 칼로리 표시
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Total:',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1A1A1A),
+                ),
+              ),
+              Text(
+                '${_totalCaloriesBurned.round()} kcal',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF5B9FED),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  // 🔥 섭취 칼로리 슬라이더 개별 카드 위젯 (수정: 툴팁/수치 표시 옵션 추가)
   Widget _buildCalorieSliderCard({
     required String title,
     required String subTitle,
     required IconData icon,
-    required Color iconColor,
     required double currentValue,
     required ValueChanged<double> onChanged,
     required String minLabel,
     required String midLabel,
     required String maxLabel,
+    bool showTooltip = false, // 툴팁 표시 여부 (섭취 칼로리에만 사용)
   }) {
     // Max Calorine을 기준으로 정규화된 값 계산 (0.0 ~ 1.0)
     final double normalizedValue = (_maxCalorie > 0) ? (currentValue.clamp(0.0, _maxCalorie.toDouble())) / _maxCalorie : 0.0;
-
-
-    // 파란색 그라데이션
     final Color barColor = Color.lerp(
-      const Color(0xFFB3E0FF), // 옅은 파랑
-      const Color(0xFF1E90FF), // 진한 파랑
+      const Color(0xFFB3E0FF),
+      const Color(0xFF1E90FF),
       normalizedValue.clamp(0.0, 1.0),
     )!;
 
@@ -511,7 +836,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. 헤더 (타이틀, 아이콘)
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -533,12 +857,12 @@ class _GenerateScreenState extends State<GenerateScreen> {
                   ),
                 ],
               ),
-              Icon(icon, color: iconColor, size: 32),
+              Icon(icon, color: const Color(0xFF1A1A1A), size: 32),
             ],
           ),
           const SizedBox(height: 20),
 
-          // ★ 2. 고정 수치 레이블: 0 kcal, BMR kcal, Max kcal (바 위에 위치)
+          // 고정 수치 레이블: 0 kcal, BMR kcal, Max kcal
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: Row(
@@ -546,8 +870,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('0 kcal', style: const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E))),
-
-                // BMR kcal (중간 수치)
                 Text(
                   '${_bmr.round()} kcal',
                   style: const TextStyle(
@@ -556,8 +878,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
                     color: Color(0xFF1A1A1A),
                   ),
                 ),
-
-                // Max kcal
                 Text(
                   '${_maxCalorie.round()} kcal',
                   style: const TextStyle(fontSize: 12, color: Color(0xFF9E9E9E)),
@@ -565,9 +885,9 @@ class _GenerateScreenState extends State<GenerateScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 4), // 수치 레이블과 바 사이 간격
+          const SizedBox(height: 4),
 
-          // 3. 슬라이더 및 바 영역
+          // 슬라이더 및 바 영역
           Stack(
             alignment: Alignment.center,
             children: [
@@ -586,7 +906,6 @@ class _GenerateScreenState extends State<GenerateScreen> {
               ),
 
               // 기초대사량 (BMR) 표시 마커 (50% 지점)
-              // Stack의 크기 계산을 위해 MediaQuery 대신 고정 너비 사용 (Padding을 고려하여 40을 뺌)
               Positioned(
                 left: (_maxCalorie > 0) ? (MediaQuery.of(context).size.width - 40) * 0.5 - 20 - 2 : 0,
                 child: Container(
@@ -596,7 +915,7 @@ class _GenerateScreenState extends State<GenerateScreen> {
                 ),
               ),
 
-              // 슬라이더 (divisions 제거로 스무스하게 움직임)
+              // 슬라이더 (툴팁 추가)
               SliderTheme(
                 data: SliderTheme.of(context).copyWith(
                   trackHeight: 10,
@@ -605,19 +924,24 @@ class _GenerateScreenState extends State<GenerateScreen> {
                   inactiveTrackColor: Colors.transparent,
                   overlayColor: const Color(0x295B9FED),
                   thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10.0),
+                  // 🔥 툴팁 표시 설정
+                  showValueIndicator: showTooltip ? ShowValueIndicator.always : ShowValueIndicator.never,
+                  valueIndicatorTextStyle: const TextStyle(fontSize: 14, color: Colors.white),
                 ),
                 child: Slider(
                   min: 0,
-                  max: _maxCalorie.toDouble(), // 최대값은 BMR * 2
+                  max: _maxCalorie.toDouble(),
                   value: currentValue,
                   onChanged: onChanged,
+                  // 🔥 툴팁에 표시될 텍스트
+                  label: '${currentValue.round()} kcal',
                 ),
               ),
             ],
           ),
           const SizedBox(height: 8),
 
-          // 5. '공복', '보통', '많이 먹음' 텍스트 레이블 (바 아래)
+          // '공복', '보통', '많이 먹음' 텍스트 레이블
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: Row(
@@ -634,9 +958,10 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // --- 기존 헬퍼 위젯들 (변경 없음) ---
 
+  // --- 기존 헬퍼 위젯들 (변경 없음) ---
   Widget _buildImagePicker() {
+    // ... (기존 _buildImagePicker 내용과 동일)
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -728,8 +1053,8 @@ class _GenerateScreenState extends State<GenerateScreen> {
     );
   }
 
-  // 기간 선택 버튼 위젯
   Widget _buildPeriodButton(String period, bool isSelected) {
+    // ... (기존 _buildPeriodButton 내용과 동일)
     return GestureDetector(
       onTap: () {
         setState(() {
